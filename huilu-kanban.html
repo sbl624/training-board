@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>26年回炉训看板</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
+
+/* Password Screen */
+#pwd-screen {
+  position: fixed; inset: 0; background: #f0f2f5;
+  display: flex; align-items: center; justify-content: center; z-index: 9999;
+}
+.pwd-card {
+  background: #fff; border-radius: 12px; padding: 48px 40px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10); width: 360px; text-align: center;
+}
+.pwd-card h2 { font-size: 22px; margin-bottom: 8px; color: #222; }
+.pwd-card p { color: #888; font-size: 14px; margin-bottom: 28px; }
+.pwd-card input {
+  width: 100%; padding: 10px 14px; border: 1px solid #d9d9d9; border-radius: 8px;
+  font-size: 15px; outline: none; margin-bottom: 16px; letter-spacing: 2px;
+}
+.pwd-card input:focus { border-color: #4096ff; }
+.pwd-card button {
+  width: 100%; padding: 10px; background: #4096ff; color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; cursor: pointer;
+}
+.pwd-card button:hover { background: #1677ff; }
+.pwd-error { color: #ff4d4f; font-size: 13px; margin-top: 8px; min-height: 20px; }
+
+/* Main App */
+#app { display: none; }
+.header {
+  background: #fff; padding: 16px 32px; display: flex; align-items: center;
+  justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 20px; font-weight: 700; color: #222; }
+.header .upload-area { display: flex; align-items: center; gap: 12px; }
+.upload-btn {
+  padding: 7px 18px; background: #4096ff; color: #fff; border: none;
+  border-radius: 6px; font-size: 14px; cursor: pointer;
+}
+.upload-btn:hover { background: #1677ff; }
+#file-name { font-size: 13px; color: #888; }
+
+.main { padding: 24px 32px; }
+
+/* KPI Cards */
+.kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
+.kpi-card {
+  background: #fff; border-radius: 10px; padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.kpi-card .label { font-size: 13px; color: #888; margin-bottom: 8px; }
+.kpi-card .value { font-size: 28px; font-weight: 700; color: #222; }
+.kpi-card .value.green { color: #52c41a; }
+.kpi-card .value.orange { color: #fa8c16; }
+.kpi-card .value.blue { color: #4096ff; }
+
+/* Filters */
+.filter-card {
+  background: #fff; border-radius: 10px; padding: 16px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px;
+}
+.filter-card h3 { font-size: 14px; font-weight: 600; color: #555; margin-bottom: 12px; }
+.filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.filter-item { display: flex; align-items: center; gap: 6px; }
+.filter-item label { font-size: 13px; color: #666; white-space: nowrap; }
+.filter-item select {
+  padding: 5px 10px; border: 1px solid #d9d9d9; border-radius: 6px;
+  font-size: 13px; outline: none; min-width: 110px; background: #fff;
+}
+.filter-item select:focus { border-color: #4096ff; }
+.reset-btn {
+  padding: 5px 16px; background: #fff; border: 1px solid #d9d9d9;
+  border-radius: 6px; font-size: 13px; cursor: pointer; color: #555;
+}
+.reset-btn:hover { border-color: #4096ff; color: #4096ff; }
+
+/* Charts */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card {
+  background: #fff; border-radius: 10px; padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.chart-card.full { grid-column: 1 / -1; }
+.chart-card h3 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 16px; }
+.chart-card canvas { max-height: 260px; }
+
+/* Risk */
+.risk-card {
+  background: #fff; border-radius: 10px; padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px;
+}
+.risk-card h3 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 16px; }
+.risk-section { margin-bottom: 16px; }
+.risk-section-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.risk-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.risk-dot.red { background: #ff4d4f; }
+.risk-dot.orange { background: #fa8c16; }
+.risk-dot.yellow { background: #fadb14; }
+.risk-list { display: flex; flex-direction: column; gap: 6px; }
+.risk-item {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 12px; border-radius: 6px; font-size: 13px;
+}
+.risk-item.red { background: #fff2f0; border: 1px solid #ffccc7; }
+.risk-item.orange { background: #fff7e6; border: 1px solid #ffd591; }
+.risk-item.yellow { background: #feffe6; border: 1px solid #fffb8f; }
+.risk-item .risk-name { font-weight: 600; color: #222; min-width: 60px; }
+.risk-item .risk-info { color: #888; font-size: 12px; }
+.risk-item .risk-val { margin-left: auto; font-weight: 600; font-size: 12px; }
+.no-risk { color: #52c41a; font-size: 13px; padding: 8px 0; }
+.risk-summary {
+  background: #f9f9f9; border-radius: 6px; padding: 10px 14px;
+  font-size: 13px; color: #444; margin-bottom: 10px; line-height: 1.8;
+  border-left: 3px solid #d9d9d9;
+}
+.risk-suggest { display: block; margin-top: 6px; color: #1677ff; font-size: 12px; }
+
+/* Table */
+.table-card {
+  background: #fff; border-radius: 10px; padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px;
+}
+.table-card h3 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 16px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  background: #fafafa; padding: 10px 12px; text-align: left;
+  border-bottom: 1px solid #e8e8e8; color: #555; font-weight: 600;
+  white-space: nowrap;
+}
+td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; color: #333; white-space: nowrap; }
+tr:hover td { background: #fafcff; }
+
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 12px; font-weight: 500;
+}
+.tag-green { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.tag-red { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+.tag-orange { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+.tag-purple { background: #f9f0ff; color: #722ed1; border: 1px solid #d3adf7; }
+.tag-gray { background: #fafafa; color: #888; border: 1px solid #d9d9d9; }
+
+.empty-tip {
+  text-align: center; padding: 60px 0; color: #bbb; font-size: 15px;
+}
+
+@media (max-width: 1100px) {
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .kpi-row .kpi-card:last-child { grid-column: span 3; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .chart-card.full { grid-column: 1; }
+}
+@media (max-width: 700px) {
+  .main { padding: 16px; }
+  .header { padding: 12px 16px; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Password Screen -->
+<div id="pwd-screen">
+  <div class="pwd-card">
+    <h2>26年回炉训看板</h2>
+    <p>请输入访问密码</p>
+    <input type="password" id="pwd-input" placeholder="请输入密码" onkeydown="if(event.key==='Enter')checkPwd()">
+    <button onclick="checkPwd()">进入看板</button>
+    <div class="pwd-error" id="pwd-error"></div>
+  </div>
+</div>
+
+<!-- Token Config Modal -->
+<div id="token-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:36px 32px;width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">配置 GitHub Token</h3>
+    <p style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.6;">Token 仅保存在你的浏览器本地，不会上传到任何地方。只有配置了 Token 的人才能发布数据，其他人只能查看。</p>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:6px;">GitHub Personal Access Token</label>
+      <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxx"
+        style="width:100%;padding:9px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none;">
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:6px;">GitHub 用户名</label>
+      <input id="ghuser-input" type="text" placeholder="sbl624"
+        style="width:100%;padding:9px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none;">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeTokenModal()" style="padding:8px 20px;border:1px solid #d9d9d9;border-radius:6px;background:#fff;font-size:13px;cursor:pointer;">取消</button>
+      <button onclick="saveToken()" style="padding:8px 20px;background:#4096ff;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <div class="header">
+    <h1>26年回炉训培训跟踪看板</h1>
+    <div class="upload-area">
+      <span id="file-name">未加载数据</span>
+      <button class="upload-btn" onclick="loadFromCloud()" style="background:#52c41a;">从云端加载</button>
+      <button class="upload-btn" onclick="document.getElementById('file-input').click()">上传 Excel</button>
+      <button id="publish-btn" class="upload-btn" onclick="publishData()" style="background:#fa8c16;display:none;">发布数据</button>
+      <button class="upload-btn" onclick="openTokenModal()" style="background:#fff;color:#555;border:1px solid #d9d9d9;">⚙ 配置</button>
+      <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="loadExcel(this)">
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Trainer Summary Card -->
+    <div id="trainer-summary" style="display:none;background:linear-gradient(135deg,#e6f4ff,#f0f9ff);border:1px solid #91caff;border-radius:10px;padding:18px 24px;margin-bottom:24px;">
+      <div style="font-size:15px;font-weight:700;color:#1677ff;margin-bottom:12px;">📋 培训师视图：<span id="trainer-name-title"></span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+        <div style="background:#fff;border-radius:8px;padding:14px 18px;text-align:center;">
+          <div style="font-size:12px;color:#888;margin-bottom:6px;">名下参训人数</div>
+          <div style="font-size:24px;font-weight:700;color:#4096ff;" id="ts-total">—</div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:14px 18px;text-align:center;">
+          <div style="font-size:12px;color:#888;margin-bottom:6px;">达标占比（目标>75%）</div>
+          <div style="font-size:24px;font-weight:700;" id="ts-goal">—</div>
+          <div style="font-size:11px;margin-top:2px;" id="ts-goal-tip"></div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:14px 18px;text-align:center;">
+          <div style="font-size:12px;color:#888;margin-bottom:6px;">高风险人数（建议绩效打C）</div>
+          <div style="font-size:24px;font-weight:700;color:#ff4d4f;" id="ts-high">—</div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:14px 18px;text-align:center;">
+          <div style="font-size:12px;color:#888;margin-bottom:6px;">连续触发人数</div>
+          <div style="font-size:24px;font-weight:700;color:#fa8c16;" id="ts-repeat">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="label">参训总人次</div>
+        <div class="value blue" id="kpi-total">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">任务一达标率</div>
+        <div class="value green" id="kpi-task1">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">任务二达标率</div>
+        <div class="value green" id="kpi-task2">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">仍在监控中人数</div>
+        <div class="value orange" id="kpi-monitor">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">回炉周期数</div>
+        <div class="value" id="kpi-cycles">—</div>
+      </div>
+      <div class="kpi-card" style="border: 2px solid #d9d9d9;">
+        <div class="label">达标占比目标（&gt;75%）</div>
+        <div class="value" id="kpi-goal">—</div>
+        <div style="font-size:12px;color:#888;margin-top:4px;" id="kpi-goal-tip"></div>
+      </div>
+    </div>
+
+    <!-- Repeat Trigger Banner -->
+    <div id="repeat-banner" style="display:none;background:#fff2f0;border:1px solid #ffccc7;border-radius:10px;padding:14px 24px;margin-bottom:24px;align-items:center;gap:24px;flex-wrap:wrap;">
+      <div style="font-size:14px;font-weight:700;color:#ff4d4f;">⚠ 连续触发人员</div>
+      <div style="font-size:13px;color:#333;">共 <b id="repeat-count">0</b> 人连续触发回炉训，占参训总人数 <b id="repeat-pct">0%</b>（观测指标目标：占比持续下降）</div>
+      <button onclick="toggleRepeatList()" style="margin-left:auto;padding:4px 14px;border:1px solid #ffccc7;border-radius:6px;background:#fff;color:#ff4d4f;font-size:13px;cursor:pointer;" id="repeat-toggle-btn">展开明细</button>
+    </div>
+    <div id="repeat-list" style="display:none;background:#fff;border-radius:10px;padding:16px 24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <h3 style="font-size:14px;font-weight:600;color:#444;margin-bottom:12px;">连续触发人员明细</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr>
+            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">姓名</th>
+            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">站点</th>
+            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">组织</th>
+            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">触发次数</th>
+            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">触发日期</th>
+            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">培训师</th>
+          </tr>
+        </thead>
+        <tbody id="repeat-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+      <h3>筛选条件</h3>
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>周期</label>
+          <select id="f-cycle" onchange="applyFilters()"><option value="">全部</option></select>
+        </div>
+        <div class="filter-item">
+          <label>品类</label>
+          <select id="f-category" onchange="applyFilters()"><option value="">全部</option></select>
+        </div>
+        <div class="filter-item">
+          <label>站点</label>
+          <select id="f-site" onchange="applyFilters()"><option value="">全部</option></select>
+        </div>
+        <div class="filter-item">
+          <label>组织</label>
+          <select id="f-org" onchange="applyFilters()"><option value="">全部</option></select>
+        </div>
+        <div class="filter-item">
+          <label>培训师</label>
+          <select id="f-trainer" onchange="applyFilters()"><option value="">全部</option></select>
+        </div>
+        <div class="filter-item">
+          <label>任务状态1</label>
+          <select id="f-status1" onchange="applyFilters()"><option value="">全部</option></select>
+        </div>
+        <div class="filter-item">
+          <label>任务状态2</label>
+          <select id="f-status2" onchange="applyFilters()"><option value="">全部</option></select>
+        </div>
+        <button class="reset-btn" onclick="resetFilters()">重置</button>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>各周期参训人数趋势</h3>
+        <canvas id="chart-trend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>各周期达标率趋势</h3>
+        <canvas id="chart-pass"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>各站点回炉人数分布</h3>
+        <canvas id="chart-site"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>各品类回炉人数分布</h3>
+        <canvas id="chart-cat"></canvas>
+      </div>
+      <div class="chart-card full">
+        <h3>各周期平均差异率趋势（含达标阈值参考线）</h3>
+        <canvas id="chart-diff"></canvas>
+      </div>
+    </div>
+
+    <!-- Risk Analysis -->
+    <div class="risk-card">
+      <h3>⚠️ 风险预警 — 智能质检中心</h3>
+      <div class="risk-section">
+        <div class="risk-section-title"><span class="risk-dot red"></span>高风险：两次任务均不过关</div>
+        <div class="risk-list" id="risk-center-high"></div>
+      </div>
+      <div class="risk-section">
+        <div class="risk-section-title"><span class="risk-dot orange"></span>中风险：任务一不过关且任务二仍在监控中</div>
+        <div class="risk-list" id="risk-center-mid"></div>
+      </div>
+      <div class="risk-section">
+        <div class="risk-section-title"><span class="risk-dot yellow"></span>关注：训后差异率高于触发差异率（越训越差）</div>
+        <div class="risk-list" id="risk-center-low"></div>
+      </div>
+    </div>
+
+    <div class="risk-card">
+      <h3>⚠️ 风险预警 — 各地库及中心仓</h3>
+      <div class="risk-section">
+        <div class="risk-section-title"><span class="risk-dot red"></span>高风险：两次任务均不过关</div>
+        <div class="risk-list" id="risk-warehouse-high"></div>
+      </div>
+      <div class="risk-section">
+        <div class="risk-section-title"><span class="risk-dot orange"></span>中风险：任务一不过关且任务二仍在监控中</div>
+        <div class="risk-list" id="risk-warehouse-mid"></div>
+      </div>
+      <div class="risk-section">
+        <div class="risk-section-title"><span class="risk-dot yellow"></span>关注：训后差异率高于触发差异率（越训越差）</div>
+        <div class="risk-list" id="risk-warehouse-low"></div>
+      </div>
+    </div>
+
+    <!-- Detail Table -->
+    <div class="table-card">
+      <h3>明细数据</h3>
+      <div class="table-wrap">
+        <table id="detail-table">
+          <thead>
+            <tr>
+              <th>触发回炉日期</th>
+              <th>品类</th>
+              <th>站点</th>
+              <th>组织名称</th>
+              <th>姓名</th>
+              <th>培训师</th>
+              <th>触发差异率</th>
+              <th>任务一达训后数量</th>
+              <th>任务一是否达标</th>
+              <th>任务状态1</th>
+              <th>任务一训后差异量</th>
+              <th>任务一训后抽检量</th>
+              <th>任务一训后差异率</th>
+              <th>任务二达训后数量</th>
+              <th>任务二是否达标</th>
+              <th>任务状态2</th>
+              <th>任务二训后差异量</th>
+              <th>任务二训后抽检量</th>
+              <th>任务二训后差异率</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr><td colspan="19" class="empty-tip">请上传 Excel 文件加载数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Password ----
+function checkPwd() {
+  const v = document.getElementById('pwd-input').value;
+  if (v === 'xinren') {
+    document.getElementById('pwd-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  } else {
+    document.getElementById('pwd-error').textContent = '密码错误，请重试';
+    document.getElementById('pwd-input').value = '';
+  }
+}
+
+// ---- Data ----
+let allData = [];
+let filteredData = [];
+let charts = {};
+
+const CHART_COLORS = ['#4096ff', '#52c41a', '#fa8c16', '#722ed1', '#ff4d4f', '#13c2c2'];
+const AXIS_COLOR = '#666';
+const GRID_COLOR = '#e8e8e8';
+
+function fmtDate(v) {
+  if (v === null || v === undefined || v === '') return '';
+  if (typeof v === 'number') {
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return d.toISOString().slice(0, 10);
+  }
+  return String(v).trim();
+}
+
+function fmtPct(v) {
+  if (v === null || v === undefined || v === '') return '';
+  const n = parseFloat(v);
+  if (isNaN(n)) return String(v);
+  // If value looks like it's already a percentage (>1), treat as-is
+  if (Math.abs(n) > 1) return n.toFixed(2) + '%';
+  return (n * 100).toFixed(2) + '%';
+}
+
+function getVal(row, idx) {
+  return (row[idx] !== undefined && row[idx] !== null) ? row[idx] : '';
+}
+
+function loadExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    allData = raw.slice(3).filter(r => r.some(c => c !== '') && String(r[1]).trim() === '手机');
+    populateFilters();
+    applyFilters();
+    if (getGHConfig().token) {
+      document.getElementById('publish-btn').style.display = 'inline-block';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function populateFilters() {
+  const fields = [
+    { id: 'f-cycle',    col: 0, fmt: fmtDate },
+    { id: 'f-category', col: 1, fmt: v => String(v).trim() },
+    { id: 'f-site',     col: 2, fmt: v => String(v).trim() },
+    { id: 'f-org',      col: 3, fmt: v => String(v).trim() },
+    { id: 'f-trainer',  col: 5, fmt: v => String(v).trim() },
+    { id: 'f-status1',  col: 9, fmt: v => String(v).trim() },
+    { id: 'f-status2',  col: 12, fmt: v => String(v).trim() },
+  ];
+  fields.forEach(({ id, col, fmt }) => {
+    const sel = document.getElementById(id);
+    const vals = [...new Set(allData.map(r => fmt(getVal(r, col))).filter(v => v !== ''))].sort();
+    sel.innerHTML = '<option value="">全部</option>' + vals.map(v => `<option value="${v}">${v}</option>`).join('');
+  });
+}
+
+function applyFilters() {
+  const cycle   = document.getElementById('f-cycle').value;
+  const cat     = document.getElementById('f-category').value;
+  const site    = document.getElementById('f-site').value;
+  const org     = document.getElementById('f-org').value;
+  const trainer = document.getElementById('f-trainer').value;
+  const s1      = document.getElementById('f-status1').value;
+  const s2      = document.getElementById('f-status2').value;
+
+  filteredData = allData.filter(r => {
+    if (cycle   && fmtDate(getVal(r, 0)) !== cycle) return false;
+    if (cat     && String(getVal(r, 1)).trim() !== cat) return false;
+    if (site    && String(getVal(r, 2)).trim() !== site) return false;
+    if (org     && String(getVal(r, 3)).trim() !== org) return false;
+    if (trainer && String(getVal(r, 5)).trim() !== trainer) return false;
+    if (s1      && String(getVal(r, 9)).trim() !== s1) return false;
+    if (s2      && String(getVal(r, 12)).trim() !== s2) return false;
+    return true;
+  });
+
+  updateKPIs();
+  updateTrainerSummary();
+  updateRepeatTrigger();
+  updateRisks();
+  updateCharts();
+  updateTable();
+}
+
+function resetFilters() {
+  ['f-cycle','f-category','f-site','f-org','f-trainer','f-status1','f-status2'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  applyFilters();
+}
+
+// ---- Trainer Summary ----
+function updateTrainerSummary() {
+  const trainer = document.getElementById('f-trainer').value;
+  const card = document.getElementById('trainer-summary');
+  if (!trainer) { card.style.display = 'none'; return; }
+
+  card.style.display = 'block';
+  document.getElementById('trainer-name-title').textContent = trainer;
+
+  const total = filteredData.length;
+  document.getElementById('ts-total').textContent = total || '0';
+
+  // 达标占比
+  const finalPass = filteredData.filter(r => {
+    const s1 = String(getVal(r, 9)).trim();
+    const s2 = String(getVal(r, 12)).trim();
+    return s1 === '达标' || s1 === '回归日常监控' || s2 === '达标' || s2 === '回归日常监控';
+  }).length;
+  const goalPct = total ? (finalPass / total * 100) : null;
+  const goalEl = document.getElementById('ts-goal');
+  const goalTip = document.getElementById('ts-goal-tip');
+  if (goalPct === null) {
+    goalEl.textContent = '—'; goalEl.style.color = '#333'; goalTip.textContent = '';
+  } else {
+    goalEl.textContent = goalPct.toFixed(1) + '%';
+    if (goalPct >= 75) {
+      goalEl.style.color = '#52c41a'; goalTip.textContent = '✓ 已达目标'; goalTip.style.color = '#52c41a';
+    } else {
+      goalEl.style.color = '#ff4d4f';
+      goalTip.textContent = '✗ 差 ' + (75 - goalPct).toFixed(1) + '%';
+      goalTip.style.color = '#ff4d4f';
+    }
+  }
+
+  // 高风险人数
+  const high = filteredData.filter(r =>
+    String(getVal(r, 9)).includes('不过关') && String(getVal(r, 12)).includes('不过关')
+  ).length;
+  document.getElementById('ts-high').textContent = high || '0';
+
+  // 连续触发人数
+  const map = {};
+  filteredData.forEach(r => {
+    const key = [String(getVal(r, 4)).trim(), String(getVal(r, 2)).trim(), String(getVal(r, 3)).trim()].join('|');
+    if (!map[key]) map[key] = 0;
+    map[key]++;
+  });
+  const repeatCount = Object.values(map).filter(v => v >= 2).length;
+  document.getElementById('ts-repeat').textContent = repeatCount || '0';
+}
+
+// ---- Repeat Trigger ----
+function toggleRepeatList() {
+  const list = document.getElementById('repeat-list');
+  const btn  = document.getElementById('repeat-toggle-btn');
+  if (list.style.display === 'none') {
+    list.style.display = 'block';
+    btn.textContent = '收起明细';
+  } else {
+    list.style.display = 'none';
+    btn.textContent = '展开明细';
+  }
+}
+
+function updateRepeatTrigger() {
+  // 用姓名+站点+组织作为唯一标识
+  const map = {};
+  filteredData.forEach(r => {
+    const key = [String(getVal(r, 4)).trim(), String(getVal(r, 2)).trim(), String(getVal(r, 3)).trim()].join('|');
+    if (!map[key]) map[key] = [];
+    map[key].push(r);
+  });
+
+  const repeatEntries = Object.entries(map).filter(([, rows]) => rows.length >= 2);
+  const repeatCount = repeatEntries.length;
+  const total = Object.keys(map).length; // 去重后总人数
+  const pct = total ? (repeatCount / total * 100).toFixed(1) : 0;
+
+  const banner = document.getElementById('repeat-banner');
+  if (repeatCount === 0) {
+    banner.style.display = 'none';
+    document.getElementById('repeat-list').style.display = 'none';
+    return;
+  }
+  banner.style.display = 'flex';
+  document.getElementById('repeat-count').textContent = repeatCount;
+  document.getElementById('repeat-pct').textContent = pct + '%';
+
+  // 按触发次数降序排列
+  repeatEntries.sort((a, b) => b[1].length - a[1].length);
+
+  const tbody = document.getElementById('repeat-tbody');
+  tbody.innerHTML = repeatEntries.map(([, rows]) => {
+    const name    = getVal(rows[0], 4);
+    const site    = getVal(rows[0], 2);
+    const org     = getVal(rows[0], 3);
+    const trainer = getVal(rows[0], 5);
+    const dates   = rows.map(r => fmtDate(getVal(r, 0))).sort().join('、');
+    const count   = rows.length;
+    const countColor = count >= 3 ? '#ff4d4f' : '#fa8c16';
+    return `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-weight:600;">${name}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${site}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${org}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-weight:700;color:${countColor};">${count} 次</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#888;">${dates}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${trainer}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ---- KPIs ----
+function updateKPIs() {
+  const total   = filteredData.length;
+  const t1pass  = filteredData.filter(r => String(getVal(r, 8)).trim() === '达标').length;
+  const t2pass  = filteredData.filter(r => String(getVal(r, 11)).trim() === '达标').length;
+  const monitor = filteredData.filter(r => String(getVal(r, 12)).includes('监控')).length;
+  const cycles  = new Set(filteredData.map(r => fmtDate(getVal(r, 0))).filter(v => v)).size;
+
+  // 达标占比：任务一或任务二最终达标的人 / 总人数
+  // 达标 = 任务状态1为"达标"或"回归日常监控"，或任务状态2为"达标"或"回归日常监控"
+  const finalPass = filteredData.filter(r => {
+    const s1 = String(getVal(r, 9)).trim();
+    const s2 = String(getVal(r, 12)).trim();
+    return s1 === '达标' || s1 === '回归日常监控' || s2 === '达标' || s2 === '回归日常监控';
+  }).length;
+  const goalPct = total ? (finalPass / total * 100) : null;
+
+  document.getElementById('kpi-total').textContent   = total || '—';
+  document.getElementById('kpi-task1').textContent   = total ? (t1pass / total * 100).toFixed(1) + '%' : '—';
+  document.getElementById('kpi-task2').textContent   = total ? (t2pass / total * 100).toFixed(1) + '%' : '—';
+  document.getElementById('kpi-monitor').textContent = total ? monitor : '—';
+  document.getElementById('kpi-cycles').textContent  = cycles || '—';
+
+  const goalEl = document.getElementById('kpi-goal');
+  const goalTip = document.getElementById('kpi-goal-tip');
+  if (goalPct === null) {
+    goalEl.textContent = '—';
+    goalEl.className = 'value';
+    goalTip.textContent = '';
+  } else {
+    goalEl.textContent = goalPct.toFixed(1) + '%';
+    if (goalPct >= 75) {
+      goalEl.className = 'value green';
+      goalTip.textContent = '✓ 已达目标';
+      document.querySelector('.kpi-card:last-child').style.borderColor = '#b7eb8f';
+    } else {
+      goalEl.className = 'value';
+      goalEl.style.color = '#ff4d4f';
+      goalTip.textContent = '✗ 未达目标（差 ' + (75 - goalPct).toFixed(1) + '%）';
+      document.querySelector('.kpi-card:last-child').style.borderColor = '#ffccc7';
+    }
+  }
+}
+
+// ---- Charts ----
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function scaleDefaults() {
+  return {
+    x: { ticks: { color: AXIS_COLOR, font: { size: 11 } }, grid: { color: GRID_COLOR } },
+    y: { ticks: { color: AXIS_COLOR, font: { size: 11 } }, grid: { color: GRID_COLOR } }
+  };
+}
+
+function makeLineChart(id, labels, datasets) {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#555', font: { size: 12 } } } },
+      scales: scaleDefaults()
+    }
+  });
+}
+
+function makeBarChart(id, labels, data, label) {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data,
+        backgroundColor: CHART_COLORS[0] + 'cc',
+        borderColor: CHART_COLORS[0],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: scaleDefaults()
+    }
+  });
+}
+
+function groupBy(data, keyFn) {
+  const map = {};
+  data.forEach(r => {
+    const k = keyFn(r);
+    if (!map[k]) map[k] = [];
+    map[k].push(r);
+  });
+  return map;
+}
+
+function updateCharts() {
+  const byCycle = groupBy(filteredData, r => fmtDate(getVal(r, 0)));
+  const cycleKeys = Object.keys(byCycle).filter(k => k).sort();
+
+  // 1. Trend: count per cycle
+  makeLineChart('chart-trend', cycleKeys, [{
+    label: '参训人数',
+    data: cycleKeys.map(k => byCycle[k].length),
+    borderColor: CHART_COLORS[0],
+    backgroundColor: CHART_COLORS[0] + '22',
+    tension: 0.3, fill: true, pointRadius: 4,
+  }]);
+
+  // 2. Pass rate trend
+  makeLineChart('chart-pass', cycleKeys, [
+    {
+      label: '任务一达标率(%)',
+      data: cycleKeys.map(k => {
+        const rows = byCycle[k];
+        const pass = rows.filter(r => String(getVal(r, 8)).trim() === '达标').length;
+        return rows.length ? +(pass / rows.length * 100).toFixed(1) : 0;
+      }),
+      borderColor: CHART_COLORS[1],
+      backgroundColor: CHART_COLORS[1] + '22',
+      tension: 0.3, fill: false, pointRadius: 4,
+    },
+    {
+      label: '任务二达标率(%)',
+      data: cycleKeys.map(k => {
+        const rows = byCycle[k];
+        const pass = rows.filter(r => String(getVal(r, 11)).trim() === '达标').length;
+        return rows.length ? +(pass / rows.length * 100).toFixed(1) : 0;
+      }),
+      borderColor: CHART_COLORS[2],
+      backgroundColor: CHART_COLORS[2] + '22',
+      tension: 0.3, fill: false, pointRadius: 4,
+    }
+  ]);
+
+  // 3. By site
+  const bySite = groupBy(filteredData, r => String(getVal(r, 2)).trim() || '未知');
+  const siteKeys = Object.keys(bySite).sort((a, b) => bySite[b].length - bySite[a].length);
+  makeBarChart('chart-site', siteKeys, siteKeys.map(k => bySite[k].length), '回炉人数');
+
+  // 4. By category
+  const byCat = groupBy(filteredData, r => String(getVal(r, 1)).trim() || '未知');
+  const catKeys = Object.keys(byCat).sort((a, b) => byCat[b].length - byCat[a].length);
+  makeBarChart('chart-cat', catKeys, catKeys.map(k => byCat[k].length), '回炉人数');
+
+  // 5. Avg diff rates per cycle + threshold lines
+  destroyChart('chart-diff');
+  const ctxDiff = document.getElementById('chart-diff').getContext('2d');
+  charts['chart-diff'] = new Chart(ctxDiff, {
+    type: 'line',
+    data: {
+      labels: cycleKeys,
+      datasets: [
+        {
+          label: '平均触发差异率(%)',
+          data: cycleKeys.map(k => {
+            const rows = byCycle[k];
+            const vals = rows.map(r => parseFloat(getVal(r, 13))).filter(v => !isNaN(v));
+            if (!vals.length) return null;
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            return +(Math.abs(avg) > 1 ? avg.toFixed(2) : (avg * 100).toFixed(2));
+          }),
+          borderColor: CHART_COLORS[3],
+          backgroundColor: CHART_COLORS[3] + '22',
+          tension: 0.3, fill: false, pointRadius: 4,
+        },
+        {
+          label: '平均任务一训后差异率(%)',
+          data: cycleKeys.map(k => {
+            const rows = byCycle[k];
+            const vals = rows.map(r => parseFloat(getVal(r, 16))).filter(v => !isNaN(v));
+            if (!vals.length) return null;
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            return +(Math.abs(avg) > 1 ? avg.toFixed(2) : (avg * 100).toFixed(2));
+          }),
+          borderColor: CHART_COLORS[1],
+          backgroundColor: CHART_COLORS[1] + '22',
+          tension: 0.3, fill: false, pointRadius: 4,
+        },
+        {
+          label: '平均任务二训后差异率(%)',
+          data: cycleKeys.map(k => {
+            const rows = byCycle[k];
+            const vals = rows.map(r => parseFloat(getVal(r, 79))).filter(v => !isNaN(v));
+            if (!vals.length) return null;
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            return +(Math.abs(avg) > 1 ? avg.toFixed(2) : (avg * 100).toFixed(2));
+          }),
+          borderColor: CHART_COLORS[2],
+          backgroundColor: CHART_COLORS[2] + '22',
+          tension: 0.3, fill: false, pointRadius: 4,
+        },
+        {
+          label: '任务一达标线(7.5%)',
+          data: cycleKeys.map(() => 7.5),
+          borderColor: '#ff4d4f',
+          borderDash: [6, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        },
+        {
+          label: '任务二达标线(6%)',
+          data: cycleKeys.map(() => 6),
+          borderColor: '#fa8c16',
+          borderDash: [6, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#555', font: { size: 12 } } } },
+      scales: scaleDefaults()
+    }
+  });
+}
+
+// ---- Risk Analysis ----
+function topN(arr, keyFn, n) {
+  const map = {};
+  arr.forEach(r => { const k = keyFn(r); map[k] = (map[k] || 0) + 1; });
+  return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+
+function buildSummary(list, level) {
+  if (!list.length) return '<div class="no-risk">暂无' + level + '人员</div>';
+  const total = list.length;
+  const topSites = topN(list, r => String(getVal(r, 2)).trim(), 3);
+  const topTrainers = topN(list, r => String(getVal(r, 5)).trim(), 3);
+  const topOrgs = topN(list, r => String(getVal(r, 3)).trim(), 2);
+
+  const siteStr = topSites.map(([k, v]) => '<b>' + k + '</b>（' + v + '人）').join('、');
+  const trainerStr = topTrainers.map(([k, v]) => '<b>' + k + '</b>（' + v + '人）').join('、');
+  const orgStr = topOrgs.map(([k, v]) => '<b>' + k + '</b>（' + v + '人）').join('、');
+
+  let suggestion = '';
+  if (level === '高风险') {
+    suggestion = '建议优先约谈问题最集中的培训师，排查带教方式是否存在系统性问题，并对这批人员启动一对一辅导。';
+  } else if (level === '中风险') {
+    suggestion = '建议跟进任务二监控进展，重点关注已超期未达标人员，评估是否需要调整培训方案。';
+  } else {
+    suggestion = '建议排查训后数据采集是否准确，同时关注培训内容是否与实际操作脱节，及时调整培训重点。';
+  }
+
+  return '<div class="risk-summary">' +
+    '共 <b>' + total + '</b> 人' + (level === '高风险' ? '两次任务均不过关' : level === '中风险' ? '任务一不过关且仍在监控' : '训后差异率高于触发差异率') + '。' +
+    '站点集中在 ' + siteStr + '；' +
+    '培训师集中在 ' + trainerStr + '；' +
+    '组织集中在 ' + orgStr + '。' +
+    '<span class="risk-suggest">💡 ' + suggestion + '</span>' +
+    '</div>';
+}
+
+function updateRisks() {
+  function riskItem(r, cls, valHtml) {
+    const name = getVal(r, 4);
+    const site = getVal(r, 2);
+    const org  = getVal(r, 3);
+    const trainer = getVal(r, 5);
+    const date = fmtDate(getVal(r, 0));
+    return '<div class="risk-item ' + cls + '">' +
+      '<span class="risk-name">' + name + '</span>' +
+      '<span class="risk-info">' + site + ' | ' + org + ' | 培训师：' + trainer + ' | ' + date + '</span>' +
+      '<span class="risk-val">' + valHtml + '</span>' +
+      '</div>';
+  }
+
+  // 按站点类型分组
+  const centerData    = filteredData.filter(r => String(getVal(r, 2)).includes('智能验机中心'));
+  const warehouseData = filteredData.filter(r => !String(getVal(r, 2)).includes('智能验机中心'));
+
+  function getRisks(data) {
+    const high = data.filter(r =>
+      String(getVal(r, 9)).includes('不过关') &&
+      String(getVal(r, 12)).includes('不过关')
+    );
+    const mid = data.filter(r =>
+      String(getVal(r, 9)).includes('不过关') &&
+      String(getVal(r, 12)).includes('监控')
+    );
+    const low = data.filter(r => {
+      const trigger = parseFloat(getVal(r, 13));
+      const after   = parseFloat(getVal(r, 16));
+      if (isNaN(trigger) || isNaN(after)) return false;
+      const t = Math.abs(trigger) > 1 ? trigger / 100 : trigger;
+      const a = Math.abs(after)   > 1 ? after   / 100 : after;
+      return a > t;
+    });
+    return { high, mid, low };
+  }
+
+  function renderRiskSection(elId, list, cls, labelFn, level) {
+    const el = document.getElementById(elId);
+    el.innerHTML = buildSummary(list, level) +
+      list.map(r => riskItem(r, cls, labelFn(r))).join('');
+  }
+
+  const center    = getRisks(centerData);
+  const warehouse = getRisks(warehouseData);
+
+  renderRiskSection('risk-center-high', center.high, 'red',
+    r => '状态1：' + String(getVal(r, 9)).trim() + ' | 状态2：' + String(getVal(r, 12)).trim() + ' <span style="background:#ff4d4f;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;margin-left:6px;">建议绩效打C</span>', '高风险');
+  renderRiskSection('risk-center-mid', center.mid, 'orange',
+    r => '状态1：' + String(getVal(r, 9)).trim() + ' | 状态2：' + String(getVal(r, 12)).trim(), '中风险');
+  renderRiskSection('risk-center-low', center.low, 'yellow', r => {
+    const trigger = parseFloat(getVal(r, 13));
+    const after   = parseFloat(getVal(r, 16));
+    const t = Math.abs(trigger) > 1 ? trigger : trigger * 100;
+    const a = Math.abs(after)   > 1 ? after   : after   * 100;
+    return '触发：' + t.toFixed(2) + '% → 训后：' + a.toFixed(2) + '%';
+  }, '关注');
+
+  renderRiskSection('risk-warehouse-high', warehouse.high, 'red',
+    r => '状态1：' + String(getVal(r, 9)).trim() + ' | 状态2：' + String(getVal(r, 12)).trim() + ' <span style="background:#ff4d4f;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;margin-left:6px;">建议绩效打C</span>', '高风险');
+  renderRiskSection('risk-warehouse-mid', warehouse.mid, 'orange',
+    r => '状态1：' + String(getVal(r, 9)).trim() + ' | 状态2：' + String(getVal(r, 12)).trim(), '中风险');
+  renderRiskSection('risk-warehouse-low', warehouse.low, 'yellow', r => {
+    const trigger = parseFloat(getVal(r, 13));
+    const after   = parseFloat(getVal(r, 16));
+    const t = Math.abs(trigger) > 1 ? trigger : trigger * 100;
+    const a = Math.abs(after)   > 1 ? after   : after   * 100;
+    return '触发：' + t.toFixed(2) + '% → 训后：' + a.toFixed(2) + '%';
+  }, '关注');
+}
+
+// ---- Status Tag ----
+function statusTag(v) {
+  const s = String(v).trim();
+  if (!s) return '';
+  let cls = 'tag-gray';
+  if (s === '达标' || s === '回归日常监控') cls = 'tag-green';
+  else if (s === '不过关' || s === '不达标') cls = 'tag-red';
+  else if (s.includes('监控')) cls = 'tag-orange';
+  else if (s.includes('休假')) cls = 'tag-purple';
+  return `<span class="tag ${cls}">${s}</span>`;
+}
+
+// ---- Table ----
+function updateTable() {
+  const tbody = document.getElementById('table-body');
+  if (!filteredData.length) {
+    tbody.innerHTML = '<tr><td colspan="19" class="empty-tip">暂无数据</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filteredData.map(r => `
+    <tr>
+      <td>${fmtDate(getVal(r, 0))}</td>
+      <td>${getVal(r, 1)}</td>
+      <td>${getVal(r, 2)}</td>
+      <td>${getVal(r, 3)}</td>
+      <td>${getVal(r, 4)}</td>
+      <td>${getVal(r, 5)}</td>
+      <td>${fmtPct(getVal(r, 13))}</td>
+      <td>${getVal(r, 7)}</td>
+      <td>${statusTag(getVal(r, 8))}</td>
+      <td>${statusTag(getVal(r, 9))}</td>
+      <td>${getVal(r, 14)}</td>
+      <td>${getVal(r, 15)}</td>
+      <td>${fmtPct(getVal(r, 16))}</td>
+      <td>${getVal(r, 10)}</td>
+      <td>${statusTag(getVal(r, 11))}</td>
+      <td>${statusTag(getVal(r, 12))}</td>
+      <td>${getVal(r, 77)}</td>
+      <td>${getVal(r, 78)}</td>
+      <td>${fmtPct(getVal(r, 79))}</td>
+    </tr>
+  `).join('');
+}
+
+// ---- GitHub Integration ----
+const REPO = 'training-board';
+const DATA_PATH = 'data/huilu-data.json';
+
+function getGHConfig() {
+  return {
+    token: localStorage.getItem('gh_token') || '',
+    user:  localStorage.getItem('gh_user')  || 'sbl624'
+  };
+}
+
+function openTokenModal() {
+  const cfg = getGHConfig();
+  document.getElementById('token-input').value  = cfg.token;
+  document.getElementById('ghuser-input').value = cfg.user;
+  const m = document.getElementById('token-modal');
+  m.style.display = 'flex';
+}
+
+function closeTokenModal() {
+  document.getElementById('token-modal').style.display = 'none';
+}
+
+function saveToken() {
+  const token = document.getElementById('token-input').value.trim();
+  const user  = document.getElementById('ghuser-input').value.trim();
+  if (!token || !user) { alert('请填写 Token 和用户名'); return; }
+  localStorage.setItem('gh_token', token);
+  localStorage.setItem('gh_user',  user);
+  closeTokenModal();
+  document.getElementById('publish-btn').style.display = 'inline-block';
+  alert('配置已保存');
+}
+
+// 页面加载时检查是否有token，有则显示发布按钮
+window.addEventListener('load', function() {
+  if (getGHConfig().token) {
+    document.getElementById('publish-btn').style.display = 'inline-block';
+  }
+  // 自动尝试从云端加载
+  loadFromCloud(true);
+});
+
+async function loadFromCloud(silent) {
+  const cfg = getGHConfig();
+  const url = 'https://raw.githubusercontent.com/' + cfg.user + '/' + REPO + '/main/' + DATA_PATH + '?t=' + Date.now();
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      if (!silent) alert('云端暂无数据，请先由管理员上传 Excel 并发布');
+      return;
+    }
+    const json = await res.json();
+    allData = json.data || [];
+    document.getElementById('file-name').textContent = '云端数据（' + (json.updatedAt || '') + '）';
+    populateFilters();
+    applyFilters();
+    if (!silent) alert('云端数据加载成功');
+  } catch(e) {
+    if (!silent) alert('加载失败：' + e.message);
+  }
+}
+
+async function publishData() {
+  if (!allData.length) { alert('请先上传 Excel 文件'); return; }
+  const cfg = getGHConfig();
+  if (!cfg.token) { openTokenModal(); return; }
+
+  const payload = JSON.stringify({
+    updatedAt: new Date().toLocaleString('zh-CN'),
+    data: allData
+  });
+  const encoded = btoa(unescape(encodeURIComponent(payload)));
+
+  // 先获取文件的 SHA（更新文件需要）
+  const apiBase = 'https://api.github.com/repos/' + cfg.user + '/' + REPO + '/contents/' + DATA_PATH;
+  let sha = '';
+  try {
+    const check = await fetch(apiBase, {
+      headers: { 'Authorization': 'token ' + cfg.token, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (check.ok) {
+      const info = await check.json();
+      sha = info.sha || '';
+    }
+  } catch(e) {}
+
+  const body = { message: 'update huilu data', content: encoded };
+  if (sha) body.sha = sha;
+
+  try {
+    const res = await fetch(apiBase, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + cfg.token,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      alert('数据发布成功！其他人刷新页面即可看到最新数据。');
+    } else {
+      const err = await res.json();
+      alert('发布失败：' + (err.message || res.status));
+    }
+  } catch(e) {
+    alert('发布失败：' + e.message);
+  }
+}
+</script>
+</body>
+</html>
