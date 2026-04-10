@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>三大仓新人培训数据看板</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f1117;color:#e0e0e0;font-family:Microsoft YaHei,sans-serif;min-height:100vh}
+
+/* 密码页 */
+#lockScreen{position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center;z-index:9999}
+.lock-box{background:#1a1d2e;border-radius:12px;padding:40px 48px;text-align:center;border:1px solid #2a2d3e;min-width:320px}
+.lock-box h2{color:#fff;font-size:20px;margin-bottom:8px}
+.lock-box p{color:#888;font-size:13px;margin-bottom:24px}
+.lock-box input{width:100%;background:#252836;color:#e0e0e0;border:1px solid #3a3d4e;padding:10px 14px;border-radius:6px;font-size:15px;text-align:center;letter-spacing:4px;outline:none;margin-bottom:12px}
+.lock-box input:focus{border-color:#3b82f6}
+.lock-box button{width:100%;background:#3b82f6;color:#fff;border:none;padding:10px;border-radius:6px;font-size:15px;cursor:pointer}
+.lock-box button:hover{background:#2563eb}
+.lock-error{color:#ef4444;font-size:13px;margin-top:8px;min-height:18px}
+
+/* 主体 */
+#mainApp{display:none}
+.header{background:#1a1d2e;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2a2d3e}
+.header h1{font-size:20px;color:#fff;font-weight:600}
+.header-right{display:flex;align-items:center;gap:12px}
+.date-tag{font-size:13px;color:#888}
+.btn-upload{background:#3b82f6;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:14px}
+.btn-upload:hover{background:#2563eb}
+#fileInput{display:none}
+.container{padding:20px 24px;max-width:1600px;margin:0 auto}
+.empty-state{text-align:center;padding:80px 20px;color:#555}
+.empty-state .icon{font-size:48px;margin-bottom:16px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi-card{background:#1a1d2e;border-radius:10px;padding:20px;border-left:4px solid}
+.kpi-card.blue{border-color:#3b82f6}.kpi-card.orange{border-color:#f59e0b}
+.kpi-card.green{border-color:#10b981}.kpi-card.red{border-color:#ef4444}
+.kpi-label{font-size:13px;color:#888;margin-bottom:8px}
+.kpi-value{font-size:36px;font-weight:700;color:#fff}
+.kpi-sub{font-size:12px;color:#666;margin-top:6px}
+.section{background:#1a1d2e;border-radius:10px;padding:20px;margin-bottom:20px}
+.section-title{font-size:15px;font-weight:600;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot-red{background:#ef4444}.dot-blue{background:#3b82f6}.dot-green{background:#10b981}
+.risk-list{display:flex;flex-direction:column;gap:8px}
+.risk-item{background:#2a1a1a;border:1px solid rgba(239,68,68,0.25);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.risk-item.orange{background:#2a1f0a;border-color:rgba(245,158,11,0.25)}
+.risk-item.yellow{background:#1f1f0a;border-color:rgba(234,179,8,0.25)}
+.risk-badge{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;white-space:nowrap}
+.badge-red{background:rgba(239,68,68,0.15);color:#ef4444}
+.badge-orange{background:rgba(245,158,11,0.15);color:#f59e0b}
+.badge-yellow{background:rgba(234,179,8,0.15);color:#eab308}
+.risk-name{font-weight:600;color:#fff;font-size:14px;min-width:60px}
+.risk-info{font-size:13px;color:#aaa}
+.risk-value{margin-left:auto;font-size:13px;font-weight:600}
+.no-risk{color:#10b981;font-size:14px;padding:10px 0}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-box{background:#1a1d2e;border-radius:10px;padding:20px}
+.chart-container{position:relative;height:260px}
+.filter-row{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.filter-row label{font-size:13px;color:#888}
+select{background:#252836;color:#e0e0e0;border:1px solid #3a3d4e;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#252836;color:#888;padding:10px 12px;text-align:left;font-weight:500;border-bottom:1px solid #2a2d3e}
+td{padding:9px 12px;border-bottom:1px solid #1e2030;color:#ccc}
+tr:hover td{background:#1e2133}
+tr.risk-qa td{background:#2a1a1a}
+tr.risk-cap td{background:#2a1f0a}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px}
+.tag-green{background:rgba(16,185,129,0.15);color:#10b981}
+.tag-red{background:rgba(239,68,68,0.15);color:#ef4444}
+.tag-orange{background:rgba(245,158,11,0.15);color:#f59e0b}
+.tag-blue{background:rgba(59,130,246,0.15);color:#3b82f6}
+.tag-gray{background:rgba(136,136,136,0.15);color:#888}
+.usage-box{background:#2a2500;border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:16px 20px;margin-bottom:20px}
+.usage-title{color:#f59e0b;font-weight:600;font-size:14px;margin-bottom:10px}
+.step{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.step-num{background:#f59e0b;color:#000;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.step p{color:#ccc;font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- 密码锁屏 -->
+<div id="lockScreen">
+  <div class="lock-box">
+    <h2>三大仓新人培训数据看板</h2>
+    <p>请输入访问密码</p>
+    <input type="password" id="pwdInput" placeholder="请输入密码" onkeydown="if(event.key==='Enter')checkPwd()">
+    <button onclick="checkPwd()">进入看板</button>
+    <div class="lock-error" id="pwdError"></div>
+  </div>
+</div>
+
+<!-- 主应用 -->
+<div id="mainApp">
+<div class="header">
+  <h1>三大仓新人培训数据看板</h1>
+  <div class="header-right">
+    <span class="date-tag" id="dataDate">暂未加载数据</span>
+    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">选择 Excel 文件</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="loadExcel(this)">
+  </div>
+</div>
+<div class="container">
+  <div class="usage-box">
+    <div class="usage-title">使用说明（每次更新数据时按以下步骤操作）</div>
+    <div class="step"><div class="step-num">1</div><p>更新并保存 Excel 文件后，点击右上角蓝色按钮【选择 Excel 文件】</p></div>
+    <div class="step"><div class="step-num">2</div><p>在弹出的窗口中找到桌面上的 Excel 文件，双击打开</p></div>
+    <div class="step"><div class="step-num">3</div><p>看板数据自动刷新完成，无需其他操作</p></div>
+  </div>
+  <div id="emptyState" class="empty-state">
+    <div class="icon">📊</div>
+    <p>请点击右上角【选择 Excel 文件】按钮加载数据</p>
+  </div>
+  <div id="dashboard" style="display:none">
+    <div class="kpi-row">
+      <div class="kpi-card blue"><div class="kpi-label">总入职人数（2026年）</div><div class="kpi-value" id="kpiTotal">-</div><div class="kpi-sub" id="kpiTotalSub"></div></div>
+      <div class="kpi-card orange"><div class="kpi-label">当前培训中</div><div class="kpi-value" id="kpiTraining">-</div><div class="kpi-sub" id="kpiTrainingSub"></div></div>
+      <div class="kpi-card green"><div class="kpi-label">已交付人数</div><div class="kpi-value" id="kpiDelivered">-</div><div class="kpi-sub" id="kpiDeliveredSub"></div></div>
+      <div class="kpi-card red"><div class="kpi-label">离职/转岗人数</div><div class="kpi-value" id="kpiQuit">-</div><div class="kpi-sub" id="kpiQuitSub"></div></div>
+    </div>
+    <div class="section">
+      <div class="section-title"><span class="dot dot-red"></span>风险预警</div>
+      <div id="riskList" class="risk-list"></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box"><div class="section-title"><span class="dot dot-blue"></span>三站点培训阶段分布</div><div class="chart-container"><canvas id="stageChart"></canvas></div></div>
+      <div class="chart-box"><div class="section-title"><span class="dot dot-green"></span>各品类交付情况</div><div class="chart-container"><canvas id="deliveryChart"></canvas></div></div>
+    </div>
+    <div class="section">
+      <div class="section-title"><span class="dot dot-blue"></span>在培人员明细</div>
+      <div class="filter-row">
+        <label>站点：</label>
+        <select id="filterCity" onchange="renderTable()"><option value="">全部</option><option value="深圳">深圳</option><option value="成都">成都</option><option value="青岛">青岛</option></select>
+        <label>阶段：</label>
+        <select id="filterStage" onchange="renderTable()"><option value="">全部</option><option value="理论">理论培训期</option><option value="导师">导师带教期</option><option value="上岗">上岗考核期</option></select>
+        <label>风险：</label>
+        <select id="filterRisk" onchange="renderTable()"><option value="">全部</option><option value="qa">QA超标</option><option value="cap">产能不达标</option></select>
+      </div>
+      <div style="overflow-x:auto">
+        <table><thead><tr>
+          <th>姓名</th><th>站点</th><th>岗位</th><th>培训师</th><th>培训阶段</th>
+          <th>日均产能</th><th>产能目标</th><th>QA差异率</th><th>QA目标</th><th>是否达标</th><th>备注</th>
+        </tr></thead><tbody id="tableBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// 密码验证
+function checkPwd(){
+  var pwd=document.getElementById("pwdInput").value;
+  if(pwd==="xinren"){
+    document.getElementById("lockScreen").style.display="none";
+    document.getElementById("mainApp").style.display="block";
+  }else{
+    document.getElementById("pwdError").textContent="密码错误，请重试";
+    document.getElementById("pwdInput").value="";
+    document.getElementById("pwdInput").focus();
+  }
+}
+
+// 看板逻辑
+var allPersonnel=[],stageChartInst=null,deliveryChartInst=null;
+var QA_TARGETS={"模块一":0.05,"模块二":0.06,"模块三":0.05,"拆修":0.025,"全检":0.165,"复测":0.05,"后验外观":0.05,"后验功能":0.05,"后验拆修":0.025,"笔记本质检":0.125,"平板质检":0.1,"3C数码":0.1,"手表":0.1,"耳机":0.1,"后验数码":0.1,"后验笔记本":0.125,"后验平板":0.1};
+var CAP_TARGETS={"模块一":140,"模块二":130,"模块三":130,"拆修":150,"全检":15,"复测":300,"后验外观":135,"后验功能":130,"后验拆修":150,"笔记本质检":19,"平板质检":40,"3C数码":36,"手表":36,"耳机":36,"后验数码":36,"后验笔记本":19,"后验平板":40};
+function daysSince(v){if(!v||typeof v!=="number")return 0;var d=new Date(Math.round((v-25569)*86400*1000));return Math.floor((Date.now()-d.getTime())/86400000);}
+function getStage(row,type){var sg;if(type==="phone"){sg=String(row[9]||"");if(sg.indexOf("交付")>=0)return "已交付";if(row[34]&&row[34]!=="/"&&row[34]!=="")return "上岗考核期";if(row[26]&&row[26]!=="/"&&row[26]!=="")return "导师带教期";return "理论培训期";}sg=String(row[8]||"");if(sg.indexOf("交付")>=0)return "已交付";if(row[25]&&row[25]!=="/"&&row[25]!=="")return "上岗考核期";if(row[18]&&row[18]!=="/"&&row[18]!=="")return "导师带教期";return "理论培训期";}
+function loadExcel(input){var file=input.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(e){try{var data=new Uint8Array(e.target.result);var wb=XLSX.read(data,{type:"array"});processWorkbook(wb,file.name);}catch(err){alert("读取失败："+err.message);}};reader.readAsArrayBuffer(file);}
+function processWorkbook(wb,fname){
+  allPersonnel=[];
+  document.getElementById("dataDate").textContent="来源："+fname+" | "+new Date().toLocaleDateString();
+  var ws1=wb.Sheets["新人汇总-周报"];
+  var d1=ws1?XLSX.utils.sheet_to_json(ws1,{header:1,defval:""}):[];
+  var total=0,training=0,delivered=0,quit=0,lv=0,dv=0,kv=0;
+  for(var i=0;i<d1.length;i++){var r=d1[i];if(r[0]==="总计"&&typeof r[2]==="number"&&r[2]>0){total+=r[2];delivered+=(r[3]||0);training+=(r[4]||0);lv+=(r[5]||0);dv+=(r[6]||0);kv+=(r[7]||0);}if(r[2]==="离职人数"&&typeof r[3]==="number")quit=r[3];}
+  document.getElementById("kpiTotal").textContent=total;
+  document.getElementById("kpiTotalSub").textContent="在职 "+(total-quit)+" 人";
+  document.getElementById("kpiTraining").textContent=training;
+  document.getElementById("kpiTrainingSub").textContent="理论"+lv+" | 带教"+dv+" | 考核"+kv;
+  document.getElementById("kpiDelivered").textContent=delivered;
+  document.getElementById("kpiDeliveredSub").textContent="交付率 "+(total>0?Math.round(delivered/total*100):0)+"%";
+  document.getElementById("kpiQuit").textContent=quit;
+  document.getElementById("kpiQuitSub").textContent="流失率 "+(total>0?Math.round(quit/total*100):0)+"%";
+  var wsP=wb.Sheets["大仓-手机"];
+  var dP=wsP?XLSX.utils.sheet_to_json(wsP,{header:1,defval:""}):[];
+  for(var i=2;i<dP.length;i++){
+    var r=dP[i];if(!r[0]||!r[1]||r[2]==="离职")continue;
+    var stage=getStage(r,"phone");if(stage==="已交付")continue;
+    var job=r[6]||"";var qn=(typeof r[37]==="number")?r[37]:null;var cn=(typeof r[36]==="number")?r[36]:null;
+    var qt=QA_TARGETS[job]||null;var ct=CAP_TARGETS[job]||null;var days=daysSince(r[3]);
+    allPersonnel.push({name:r[1],city:r[0],job:job,trainer:r[7]||r[8]||"",stage:stage,cap:cn,capTarget:ct,qa:qn,qaTarget:qt,qualified:r[40]||"",remark:r[42]||"",riskQA:qn!==null&&qt!==null&&qn>qt,riskCap:cn!==null&&ct!==null&&cn<ct&&stage==="上岗考核期",riskDelay:days>60,days:days});
+  }
+  var wsM=wb.Sheets["25-大仓"];
+  var dM=wsM?XLSX.utils.sheet_to_json(wsM,{header:1,defval:""}):[];
+  for(var i=2;i<dM.length;i++){
+    var r=dM[i];if(!r[0]||!r[1])continue;
+    if(r[33]==="是"||String(r[34]||"").indexOf("离职")>=0||String(r[34]||"").indexOf("转岗")>=0)continue;
+    var stage=getStage(r,"main");if(stage==="已交付")continue;
+    var job=r[6]||"";var qn=(typeof r[28]==="number")?r[28]:null;var cn=(typeof r[27]==="number")?r[27]:null;
+    var qt=QA_TARGETS[job]||null;var ct=CAP_TARGETS[job]||null;var days=daysSince(r[2]);
+    allPersonnel.push({name:r[1],city:r[0],job:job,trainer:r[7]||"",stage:stage,cap:cn,capTarget:ct,qa:qn,qaTarget:qt,qualified:r[30]||"",remark:r[35]||"",riskQA:qn!==null&&qt!==null&&qn>qt,riskCap:cn!==null&&ct!==null&&cn<ct&&stage==="上岗考核期",riskDelay:days>60,days:days});
+  }
+  renderRisks();renderCharts(d1);renderTable();
+  document.getElementById("emptyState").style.display="none";
+  document.getElementById("dashboard").style.display="block";
+}
+function renderRisks(){
+  var el=document.getElementById("riskList");
+  var risks=[];
+  allPersonnel.forEach(function(p){
+    if(p.riskQA)risks.push({cls:"risk-item",badge:"badge-red",label:"QA超标",name:p.name,city:p.city,job:p.job,stage:p.stage,val:"实际"+(p.qa*100).toFixed(2)+"% 目标"+(p.qaTarget*100).toFixed(1)+"%",color:"#ef4444"});
+    if(p.riskCap)risks.push({cls:"risk-item orange",badge:"badge-orange",label:"产能不达标",name:p.name,city:p.city,job:p.job,stage:p.stage,val:"实际"+p.cap+" 目标"+p.capTarget,color:"#f59e0b"});
+    if(p.riskDelay)risks.push({cls:"risk-item yellow",badge:"badge-yellow",label:"超期未交付",name:p.name,city:p.city,job:p.job,stage:p.stage,val:"已入职"+p.days+"天",color:"#eab308"});
+  });
+  if(risks.length===0){el.innerHTML="<div class=no-risk>当前无风险人员</div>";return;}
+  el.innerHTML=risks.map(function(r){
+    var h="<div class='"+r.cls+"'>";
+    h+="<span class='risk-badge "+r.badge+"'>"+r.label+"</span>";
+    h+="<span class='risk-name'>"+r.name+"</span>";
+    h+="<span class='risk-info'>"+r.city+" | "+r.job+" | "+r.stage+"</span>";
+    h+="<span class='risk-value' style='color:"+r.color+"'>"+r.val+"</span></div>";
+    return h;
+  }).join("");
+}
+function renderCharts(d1){
+  var cities=["深圳","成都","青岛"];
+  var lD=[0,0,0],dD=[0,0,0],kD=[0,0,0];
+  for(var i=0;i<d1.length;i++){var r=d1[i];var ci=cities.indexOf(r[1]);if(ci>=0&&typeof r[5]==="number"){lD[ci]+=r[5];dD[ci]+=(r[6]||0);kD[ci]+=(r[7]||0);}}
+  if(stageChartInst)stageChartInst.destroy();
+  stageChartInst=new Chart(document.getElementById("stageChart"),{type:"bar",data:{labels:cities,datasets:[{label:"理论培训期",data:lD,backgroundColor:"#3b82f6",borderRadius:3},{label:"导师带教期",data:dD,backgroundColor:"#f59e0b",borderRadius:3},{label:"上岗考核期",data:kD,backgroundColor:"#10b981",borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#aaa"}}},scales:{x:{stacked:true,ticks:{color:"#aaa"},grid:{color:"#2a2d3e"}},y:{stacked:true,ticks:{color:"#aaa"},grid:{color:"#2a2d3e"}}}}});
+  var cats=["手机","五品类","兴趣品类"];
+  var cT=[0,0,0],cD=[0,0,0];
+  var cMap={"手机合计":0,"五品类合计":1,"兴趣品类合计":2};
+  for(var i=0;i<d1.length;i++){var r=d1[i];var k=String(r[0]);if(cMap[k]!==undefined&&typeof r[2]==="number"&&!r[1]){cT[cMap[k]]=r[2];cD[cMap[k]]=r[3]||0;}}
+  var rates=cT.map(function(t,i){return t>0?Math.round(cD[i]/t*100):0;});
+  if(deliveryChartInst)deliveryChartInst.destroy();
+  deliveryChartInst=new Chart(document.getElementById("deliveryChart"),{type:"bar",data:{labels:cats,datasets:[{label:"交付率%",data:rates,backgroundColor:["#3b82f6","#10b981","#f59e0b"],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#aaa"}}},scales:{x:{ticks:{color:"#aaa"},grid:{color:"#2a2d3e"}},y:{max:100,ticks:{color:"#aaa",callback:function(v){return v+"%"}},grid:{color:"#2a2d3e"}}}}});
+}
+function renderTable(){
+  var city=document.getElementById("filterCity").value;
+  var stage=document.getElementById("filterStage").value;
+  var risk=document.getElementById("filterRisk").value;
+  var list=allPersonnel.filter(function(p){
+    if(city&&p.city!==city)return false;
+    if(stage&&p.stage.indexOf(stage)<0)return false;
+    if(risk==="qa"&&!p.riskQA)return false;
+    if(risk==="cap"&&!p.riskCap)return false;
+    return true;
+  });
+  var tbody=document.getElementById("tableBody");
+  if(list.length===0){tbody.innerHTML="<tr><td colspan=11 style='text-align:center;color:#555;padding:30px'>暂无数据</td></tr>";return;}
+  tbody.innerHTML=list.map(function(p){
+    var rc=p.riskQA?"risk-qa":p.riskCap?"risk-cap":"";
+    var st=p.stage==="理论培训期"?"<span class='tag tag-blue'>理论培训期</span>":p.stage==="导师带教期"?"<span class='tag tag-orange'>导师带教期</span>":p.stage==="上岗考核期"?"<span class='tag tag-green'>上岗考核期</span>":"<span class='tag tag-gray'>"+p.stage+"</span>";
+    var cc=p.riskCap?"<span style='color:#f59e0b'>"+(p.cap!==null?p.cap:"-")+"</span>":(p.cap!==null?String(p.cap):"-");
+    var qc=p.riskQA?"<span style='color:#ef4444'>"+(p.qa*100).toFixed(2)+"%</span>":(p.qa!==null?(p.qa*100).toFixed(2)+"%":"-");
+    var qt=p.qaTarget!==null?(p.qaTarget*100).toFixed(1)+"%":"-";
+    var ql=p.qualified==="是"?"<span class='tag tag-green'>达标</span>":p.qualified==="否"?"<span class='tag tag-red'>未达标</span>":"<span class='tag tag-gray'>-</span>";
+    var rm=p.remark?p.remark.substring(0,15)+(p.remark.length>15?"...":""):"-";
+    var h="<tr class='"+rc+"'>";
+    h+="<td>"+p.name+"</td><td>"+p.city+"</td><td>"+p.job+"</td><td>"+p.trainer+"</td><td>"+st+"</td>";
+    h+="<td>"+cc+"</td><td style='color:#555'>"+(p.capTarget!==null?p.capTarget:"-")+"</td>";
+    h+="<td>"+qc+"</td><td style='color:#555'>"+qt+"</td><td>"+ql+"</td><td>"+rm+"</td></tr>";
+    return h;
+  }).join("");
+}
+</script>
+</body>
+</html>
