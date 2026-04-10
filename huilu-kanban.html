@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>26年回炉训看板</title>
+<title>26年尾部训看板</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -172,7 +172,7 @@ tr:hover td { background: #fafcff; }
 <!-- Password Screen -->
 <div id="pwd-screen">
   <div class="pwd-card">
-    <h2>26年回炉训看板</h2>
+    <h2>26年尾部训看板</h2>
     <p>请输入访问密码</p>
     <input type="password" id="pwd-input" placeholder="请输入密码" onkeydown="if(event.key==='Enter')checkPwd()">
     <button onclick="checkPwd()">进入看板</button>
@@ -205,7 +205,7 @@ tr:hover td { background: #fafcff; }
 <!-- Main App -->
 <div id="app">
   <div class="header">
-    <h1>26年回炉训培训跟踪看板</h1>
+    <h1>26年尾部训培训跟踪看板</h1>
     <div class="upload-area">
       <span id="file-name">未加载数据</span>
       <button class="upload-btn" onclick="loadFromCloud()" style="background:#52c41a;">从云端加载</button>
@@ -260,7 +260,7 @@ tr:hover td { background: #fafcff; }
         <div class="value orange" id="kpi-monitor">—</div>
       </div>
       <div class="kpi-card">
-        <div class="label">回炉周期数</div>
+        <div class="label">尾部周期数</div>
         <div class="value" id="kpi-cycles">—</div>
       </div>
       <div class="kpi-card" style="border: 2px solid #d9d9d9;">
@@ -273,7 +273,7 @@ tr:hover td { background: #fafcff; }
     <!-- Repeat Trigger Banner -->
     <div id="repeat-banner" style="display:none;background:#fff2f0;border:1px solid #ffccc7;border-radius:10px;padding:14px 24px;margin-bottom:24px;align-items:center;gap:24px;flex-wrap:wrap;">
       <div style="font-size:14px;font-weight:700;color:#ff4d4f;">⚠ 连续触发人员</div>
-      <div style="font-size:13px;color:#333;">共 <b id="repeat-count">0</b> 人连续触发回炉训，占参训总人数 <b id="repeat-pct">0%</b>（观测指标目标：占比持续下降）</div>
+      <div style="font-size:13px;color:#333;">共 <b id="repeat-count">0</b> 人连续触发尾部训，占参训总人数 <b id="repeat-pct">0%</b>（观测指标目标：占比持续下降）</div>
       <button onclick="toggleRepeatList()" style="margin-left:auto;padding:4px 14px;border:1px solid #ffccc7;border-radius:6px;background:#fff;color:#ff4d4f;font-size:13px;cursor:pointer;" id="repeat-toggle-btn">展开明细</button>
     </div>
     <div id="repeat-list" style="display:none;background:#fff;border-radius:10px;padding:16px 24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
@@ -340,11 +340,11 @@ tr:hover td { background: #fafcff; }
         <canvas id="chart-pass"></canvas>
       </div>
       <div class="chart-card">
-        <h3>各站点回炉人数分布</h3>
+        <h3>各站点尾部人数分布</h3>
         <canvas id="chart-site"></canvas>
       </div>
       <div class="chart-card">
-        <h3>各品类回炉人数分布</h3>
+        <h3>各品类尾部人数分布</h3>
         <canvas id="chart-cat"></canvas>
       </div>
       <div class="chart-card full">
@@ -393,7 +393,7 @@ tr:hover td { background: #fafcff; }
         <table id="detail-table">
           <thead>
             <tr>
-              <th>触发回炉日期</th>
+              <th>触发尾部训日期</th>
               <th>品类</th>
               <th>站点</th>
               <th>组织名称</th>
@@ -427,7 +427,7 @@ tr:hover td { background: #fafcff; }
 // ---- Password ----
 function checkPwd() {
   const v = document.getElementById('pwd-input').value;
-  if (v === 'xinren') {
+  if (v === 'weibu') {
     document.getElementById('pwd-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
   } else {
@@ -794,12 +794,12 @@ function updateCharts() {
   // 3. By site
   const bySite = groupBy(filteredData, r => String(getVal(r, 2)).trim() || '未知');
   const siteKeys = Object.keys(bySite).sort((a, b) => bySite[b].length - bySite[a].length);
-  makeBarChart('chart-site', siteKeys, siteKeys.map(k => bySite[k].length), '回炉人数');
+  makeBarChart('chart-site', siteKeys, siteKeys.map(k => bySite[k].length), '尾部人数');
 
   // 4. By category
   const byCat = groupBy(filteredData, r => String(getVal(r, 1)).trim() || '未知');
   const catKeys = Object.keys(byCat).sort((a, b) => byCat[b].length - byCat[a].length);
-  makeBarChart('chart-cat', catKeys, catKeys.map(k => byCat[k].length), '回炉人数');
+  makeBarChart('chart-cat', catKeys, catKeys.map(k => byCat[k].length), '尾部人数');
 
   // 5. Avg diff rates per cycle + threshold lines
   destroyChart('chart-diff');
