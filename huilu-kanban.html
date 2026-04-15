@@ -6,248 +6,120 @@
 <title>26年尾部训看板</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
-
-/* Password Screen */
-#pwd-screen {
-  position: fixed; inset: 0; background: #f0f2f5;
-  display: flex; align-items: center; justify-content: center; z-index: 9999;
-}
-.pwd-card {
-  background: #fff; border-radius: 12px; padding: 48px 40px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.10); width: 360px; text-align: center;
-}
-.pwd-card h2 { font-size: 22px; margin-bottom: 8px; color: #222; }
-.pwd-card p { color: #888; font-size: 14px; margin-bottom: 28px; }
-.pwd-card input {
-  width: 100%; padding: 10px 14px; border: 1px solid #d9d9d9; border-radius: 8px;
-  font-size: 15px; outline: none; margin-bottom: 16px; letter-spacing: 2px;
-}
-.pwd-card input:focus { border-color: #4096ff; }
-.pwd-card button {
-  width: 100%; padding: 10px; background: #4096ff; color: #fff;
-  border: none; border-radius: 8px; font-size: 15px; cursor: pointer;
-}
-.pwd-card button:hover { background: #1677ff; }
-.pwd-error { color: #ff4d4f; font-size: 13px; margin-top: 8px; min-height: 20px; }
-
-/* Main App */
-#app { display: none; }
-.header {
-  background: #fff; padding: 16px 32px; display: flex; align-items: center;
-  justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  position: sticky; top: 0; z-index: 100;
-}
-.header h1 { font-size: 20px; font-weight: 700; color: #222; }
-.header .upload-area { display: flex; align-items: center; gap: 12px; }
-.upload-btn {
-  padding: 7px 18px; background: #4096ff; color: #fff; border: none;
-  border-radius: 6px; font-size: 14px; cursor: pointer;
-}
-.upload-btn:hover { background: #1677ff; }
-#file-name { font-size: 13px; color: #888; }
-
-.main { padding: 24px 32px; }
-
-/* KPI Cards */
-.kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
-.kpi-card {
-  background: #fff; border-radius: 10px; padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.kpi-card .label { font-size: 13px; color: #888; margin-bottom: 8px; }
-.kpi-card .value { font-size: 28px; font-weight: 700; color: #222; }
-.kpi-card .value.green { color: #52c41a; }
-.kpi-card .value.orange { color: #fa8c16; }
-.kpi-card .value.blue { color: #4096ff; }
-
-/* Filters */
-.filter-card {
-  background: #fff; border-radius: 10px; padding: 16px 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px;
-}
-.filter-card h3 { font-size: 14px; font-weight: 600; color: #555; margin-bottom: 12px; }
-.filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.filter-item { display: flex; align-items: center; gap: 6px; }
-.filter-item label { font-size: 13px; color: #666; white-space: nowrap; }
-.filter-item select {
-  padding: 5px 10px; border: 1px solid #d9d9d9; border-radius: 6px;
-  font-size: 13px; outline: none; min-width: 110px; background: #fff;
-}
-.filter-item select:focus { border-color: #4096ff; }
-.reset-btn {
-  padding: 5px 16px; background: #fff; border: 1px solid #d9d9d9;
-  border-radius: 6px; font-size: 13px; cursor: pointer; color: #555;
-}
-.reset-btn:hover { border-color: #4096ff; color: #4096ff; }
-
-/* Charts */
-.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-.chart-card {
-  background: #fff; border-radius: 10px; padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.chart-card.full { grid-column: 1 / -1; }
-.chart-card h3 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 16px; }
-.chart-card canvas { max-height: 260px; }
-
-/* Risk */
-.risk-card {
-  background: #fff; border-radius: 10px; padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px;
-}
-.risk-card h3 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 16px; }
-.risk-section { margin-bottom: 16px; }
-.risk-section-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-.risk-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.risk-dot.red { background: #ff4d4f; }
-.risk-dot.orange { background: #fa8c16; }
-.risk-dot.yellow { background: #fadb14; }
-.risk-list { display: flex; flex-direction: column; gap: 6px; }
-.risk-item {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 8px 12px; border-radius: 6px; font-size: 13px;
-}
-.risk-item.red { background: #fff2f0; border: 1px solid #ffccc7; }
-.risk-item.orange { background: #fff7e6; border: 1px solid #ffd591; }
-.risk-item.yellow { background: #feffe6; border: 1px solid #fffb8f; }
-.risk-item .risk-name { font-weight: 600; color: #222; min-width: 60px; }
-.risk-item .risk-info { color: #888; font-size: 12px; }
-.risk-item .risk-val { margin-left: auto; font-weight: 600; font-size: 12px; }
-.no-risk { color: #52c41a; font-size: 13px; padding: 8px 0; }
-.risk-summary {
-  background: #f9f9f9; border-radius: 6px; padding: 10px 14px;
-  font-size: 13px; color: #444; margin-bottom: 10px; line-height: 1.8;
-  border-left: 3px solid #d9d9d9;
-}
-.risk-suggest { display: block; margin-top: 6px; color: #1677ff; font-size: 12px; }
-
-/* Table */
-.table-card {
-  background: #fff; border-radius: 10px; padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px;
-}
-.table-card h3 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 16px; }
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th {
-  background: #fafafa; padding: 10px 12px; text-align: left;
-  border-bottom: 1px solid #e8e8e8; color: #555; font-weight: 600;
-  white-space: nowrap;
-}
-td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; color: #333; white-space: nowrap; }
-tr:hover td { background: #fafcff; }
-
-.tag {
-  display: inline-block; padding: 2px 8px; border-radius: 4px;
-  font-size: 12px; font-weight: 500;
-}
-.tag-green { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
-.tag-red { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
-.tag-orange { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
-.tag-purple { background: #f9f0ff; color: #722ed1; border: 1px solid #d3adf7; }
-.tag-gray { background: #fafafa; color: #888; border: 1px solid #d9d9d9; }
-
-.empty-tip {
-  text-align: center; padding: 60px 0; color: #bbb; font-size: 15px;
-}
-
-@media (max-width: 1100px) {
-  .kpi-row { grid-template-columns: repeat(3, 1fr); }
-  .kpi-row .kpi-card:last-child { grid-column: span 3; }
-  .charts-grid { grid-template-columns: 1fr; }
-  .chart-card.full { grid-column: 1; }
-}
-@media (max-width: 700px) {
-  .main { padding: 16px; }
-  .header { padding: 12px 16px; }
-  .kpi-row { grid-template-columns: repeat(2, 1fr); }
-}
-</style>
+<style>*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#333}
+#app{display:block}
+.header{background:#fff;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.08);position:sticky;top:0;z-index:100}
+.header h1{font-size:20px;font-weight:700;color:#222}
+.header .upload-area{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.upload-btn{padding:7px 16px;background:#4096ff;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer}
+.upload-btn:hover{background:#1677ff}
+#file-name{font-size:13px;color:#888}
+.main{padding:24px 32px}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:24px}
+.kpi-card{background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:box-shadow .2s,transform .1s;border:2px solid transparent}
+.kpi-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12);transform:translateY(-1px)}
+.kpi-card.active{border-color:#4096ff}
+.kpi-card .label{font-size:13px;color:#888;margin-bottom:8px}
+.kpi-card .value{font-size:28px;font-weight:700;color:#222}
+.kpi-card .value.green{color:#52c41a}
+.kpi-card .value.orange{color:#fa8c16}
+.kpi-card .value.blue{color:#4096ff}
+.kpi-card .hint{font-size:11px;color:#bbb;margin-top:4px}
+.active-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.filter-tag{display:inline-flex;align-items:center;gap:4px;background:#e6f4ff;border:1px solid #91caff;border-radius:4px;padding:3px 8px;font-size:12px;color:#1677ff}
+.filter-tag .remove{cursor:pointer;font-size:14px;line-height:1;color:#4096ff;margin-left:2px}
+.filter-tag .remove:hover{color:#ff4d4f}
+.filter-card{background:#fff;border-radius:10px;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px}
+.filter-card h3{font-size:14px;font-weight:600;color:#555;margin-bottom:12px}
+.filter-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.filter-item{display:flex;flex-direction:column;gap:4px;min-width:130px}
+.filter-item label{font-size:12px;color:#888}
+.date-range-item{display:flex;flex-direction:column;gap:4px}
+.date-range-item label{font-size:12px;color:#888}
+.date-range-row{display:flex;align-items:center;gap:6px}
+.date-input{padding:5px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none;width:130px}
+.date-input:focus{border-color:#4096ff}
+.date-sep{color:#888;font-size:13px}
+.searchable-select{position:relative}
+.searchable-select input.search-input{width:100%;padding:5px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none;background:#fff}
+.searchable-select input.search-input:focus{border-color:#4096ff}
+.searchable-select .dropdown{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d9d9d9;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:500;max-height:200px;overflow-y:auto;margin-top:2px}
+.searchable-select .dropdown.open{display:block}
+.searchable-select .dropdown-item{padding:7px 12px;font-size:13px;cursor:pointer;color:#333}
+.searchable-select .dropdown-item:hover{background:#f0f7ff;color:#1677ff}
+.searchable-select .dropdown-item.selected{background:#e6f4ff;color:#1677ff;font-weight:500}
+.searchable-select .no-result{color:#bbb;cursor:default;padding:7px 12px;font-size:13px}
+.reset-btn{padding:5px 16px;background:#fff;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;cursor:pointer;color:#555;align-self:flex-end;height:30px}
+.reset-btn:hover{border-color:#4096ff;color:#4096ff}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.chart-card.full{grid-column:1/-1}
+.chart-card h3{font-size:14px;font-weight:600;color:#444;margin-bottom:16px}
+.chart-card canvas{max-height:260px}
+.risk-card{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px;overflow:hidden}
+.risk-card-header{padding:16px 24px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.risk-card-header:hover{background:#fafafa}
+.risk-card-header h3{font-size:14px;font-weight:600;color:#444}
+.risk-toggle{font-size:12px;color:#888;transition:transform .2s;display:inline-block}
+.risk-card-header.open .risk-toggle{transform:rotate(180deg)}
+.risk-card-body{padding:0 24px 20px;display:none}
+.risk-card-body.open{display:block}
+.risk-section{margin-bottom:16px}
+.risk-section-title{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.risk-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.risk-dot.red{background:#ff4d4f}.risk-dot.orange{background:#fa8c16}.risk-dot.yellow{background:#fadb14}
+.risk-list{display:flex;flex-direction:column;gap:6px}
+.risk-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;border-radius:6px;font-size:13px}
+.risk-item.red{background:#fff2f0;border:1px solid #ffccc7}
+.risk-item.orange{background:#fff7e6;border:1px solid #ffd591}
+.risk-item.yellow{background:#feffe6;border:1px solid #fffb8f}
+.risk-item .risk-name{font-weight:600;color:#222;min-width:60px}
+.risk-item .risk-info{color:#888;font-size:12px}
+.risk-item .risk-val{margin-left:auto;font-weight:600;font-size:12px}
+.no-risk{color:#52c41a;font-size:13px;padding:8px 0}
+.risk-summary{background:#f9f9f9;border-radius:6px;padding:10px 14px;font-size:13px;color:#444;margin-bottom:10px;line-height:1.8;border-left:3px solid #d9d9d9}
+.risk-suggest{display:block;margin-top:6px;color:#1677ff;font-size:12px}
+.table-card{background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px}
+.table-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.table-card-header h3{font-size:14px;font-weight:600;color:#444}
+.export-btn{padding:6px 16px;background:#52c41a;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer}
+.export-btn:hover{background:#389e0d}
+.table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#fafafa;padding:10px 12px;text-align:left;border-bottom:2px solid #e8e8e8;color:#555;font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:10}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0;color:#333;white-space:nowrap}
+tr:hover td{background:#fafcff}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500}
+.tag-green{background:#f6ffed;color:#52c41a;border:1px solid #b7eb8f}
+.tag-red{background:#fff2f0;color:#ff4d4f;border:1px solid #ffccc7}
+.tag-orange{background:#fff7e6;color:#fa8c16;border:1px solid #ffd591}
+.tag-purple{background:#f9f0ff;color:#722ed1;border:1px solid #d3adf7}
+.tag-gray{background:#fafafa;color:#888;border:1px solid #d9d9d9}
+.empty-tip{text-align:center;padding:60px 0;color:#bbb;font-size:15px}
+#repeat-banner{display:none;background:#fff2f0;border:1px solid #ffccc7;border-radius:10px;padding:14px 24px;margin-bottom:24px;align-items:center;gap:24px;flex-wrap:wrap}
+#repeat-list{display:none;background:#fff;border-radius:10px;padding:16px 24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+#trainer-summary{display:none;background:linear-gradient(135deg,#e6f4ff,#f0f9ff);border:1px solid #91caff;border-radius:10px;padding:18px 24px;margin-bottom:24px}
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.charts-grid{grid-template-columns:1fr}.chart-card.full{grid-column:1}}
+@media(max-width:700px){.main{padding:16px}.header{padding:12px 16px}.kpi-row{grid-template-columns:repeat(2,1fr)}}</style>
 </head>
 <body>
+<body>
 
-<!-- Password Screen -->
-<div id="pwd-screen">
-  <div class="pwd-card">
-    <h2>26年尾部训看板</h2>
-    <p>请输入访问密码</p>
-    <input type="password" id="pwd-input" placeholder="请输入密码" onkeydown="if(event.key==='Enter')checkPwd()">
-    <button onclick="checkPwd()">进入看板</button>
-    <div class="pwd-error" id="pwd-error"></div>
-  </div>
-</div>
-
-<!-- Help Modal -->
-<div id="help-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;">
-  <div style="background:#fff;border-radius:12px;padding:36px 32px;width:620px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.15);position:relative;">
-    <button onclick="closeHelpModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#888;">✕</button>
-    <h3 style="font-size:17px;font-weight:700;margin-bottom:20px;color:#222;">📖 尾部训看板使用说明</h3>
-
-    <div style="font-size:13px;color:#444;line-height:2;">
-
-      <div style="font-weight:700;color:#1677ff;margin-bottom:6px;">一、角色说明</div>
-      <div style="margin-bottom:16px;">
-        本看板分两类使用者：<br>
-        <b>管理员</b>（你）：负责每周上传 Excel 数据并发布到云端，需配置 GitHub Token。<br>
-        <b>培训师</b>：打开链接后直接点"从云端加载"查看数据，无需上传，无需配置。
-      </div>
-
-      <div style="font-weight:700;color:#1677ff;margin-bottom:6px;">二、管理员每周操作流程</div>
-      <div style="margin-bottom:16px;">
-        1. 首次使用：点右上角 <b>⚙ 配置</b>，填入 GitHub Token 和用户名保存（仅需配置一次）<br>
-        2. 每周一：点 <b>上传 Excel</b>，选择当周最新的回炉训流程表<br>
-        3. 数据加载完成后，点 <b>发布数据</b>（橙色按钮），等待提示"发布成功"<br>
-        4. 发布后所有人刷新页面即可看到最新数据
-      </div>
-
-      <div style="font-weight:700;color:#1677ff;margin-bottom:6px;">三、培训师使用流程</div>
-      <div style="margin-bottom:16px;">
-        1. 打开看板链接，输入密码进入<br>
-        2. 点 <b>从云端加载</b>（绿色按钮）获取最新数据<br>
-        3. 在筛选器中选择自己的名字，查看专属视图<br>
-        4. 专属视图显示：名下参训人数、达标占比、高风险人数、连续触发人数
-      </div>
-
-      <div style="font-weight:700;color:#1677ff;margin-bottom:6px;">四、风险预警说明</div>
-      <div style="margin-bottom:16px;">
-        <span style="background:#fff2f0;color:#ff4d4f;padding:1px 6px;border-radius:3px;border:1px solid #ffccc7;">高风险</span> 两次任务均不过关 → 建议绩效打C<br>
-        <span style="background:#fff7e6;color:#fa8c16;padding:1px 6px;border-radius:3px;border:1px solid #ffd591;">中风险</span> 任务一不过关且任务二仍在监控中<br>
-        <span style="background:#feffe6;color:#888;padding:1px 6px;border-radius:3px;border:1px solid #fffb8f;">关注</span> 训后差异率高于触发差异率（越训越差）
-      </div>
-
-      <div style="font-weight:700;color:#1677ff;margin-bottom:6px;">五、达标标准（手机岗位）</div>
-      <div style="margin-bottom:16px;">
-        模块一：40台抽检，差异率 ≤ 7.5%<br>
-        模块二：40台抽检，差异率 ≤ 6%<br>
-        项目目标：当月触发人员达标占比 <b>&gt; 75%</b>
-      </div>
-
-      <div style="font-weight:700;color:#1677ff;margin-bottom:6px;">六、连续触发人员</div>
-      <div>
-        同一人（姓名+站点+组织相同）在数据中出现2次及以上，视为连续触发。<br>
-        这批人是绩效干预的核心关注对象，触发3次及以上标红显示。
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- Token Config Modal -->
 <div id="token-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:12px;padding:36px 32px;width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
     <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">配置 GitHub Token</h3>
-    <p style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.6;">Token 仅保存在你的浏览器本地，不会上传到任何地方。只有配置了 Token 的人才能发布数据，其他人只能查看。</p>
+    <p style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.6;">Token 仅保存在你的浏览器本地，不会上传到任何地方。</p>
     <div style="margin-bottom:12px;">
       <label style="font-size:13px;color:#555;display:block;margin-bottom:6px;">GitHub Personal Access Token</label>
-      <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxx"
-        style="width:100%;padding:9px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none;">
+      <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;padding:9px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none;">
     </div>
     <div style="margin-bottom:20px;">
       <label style="font-size:13px;color:#555;display:block;margin-bottom:6px;">GitHub 用户名</label>
-      <input id="ghuser-input" type="text" placeholder="sbl624"
-        style="width:100%;padding:9px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none;">
+      <input id="ghuser-input" type="text" placeholder="sbl624" style="width:100%;padding:9px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none;">
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button onclick="closeTokenModal()" style="padding:8px 20px;border:1px solid #d9d9d9;border-radius:6px;background:#fff;font-size:13px;cursor:pointer;">取消</button>
@@ -266,15 +138,14 @@ tr:hover td { background: #fafcff; }
       <button class="upload-btn" onclick="document.getElementById('file-input').click()">上传 Excel</button>
       <button id="publish-btn" class="upload-btn" onclick="publishData()" style="background:#fa8c16;display:none;">发布数据</button>
       <button class="upload-btn" onclick="openTokenModal()" style="background:#fff;color:#555;border:1px solid #d9d9d9;">⚙ 配置</button>
-      <button class="upload-btn" onclick="openHelpModal()" style="background:#fff;color:#555;border:1px solid #d9d9d9;">📖 使用说明</button>
       <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="loadExcel(this)">
     </div>
   </div>
 
   <div class="main">
-    <!-- Trainer Summary Card -->
-    <div id="trainer-summary" style="display:none;background:linear-gradient(135deg,#e6f4ff,#f0f9ff);border:1px solid #91caff;border-radius:10px;padding:18px 24px;margin-bottom:24px;">
-      <div style="font-size:15px;font-weight:700;color:#1677ff;margin-bottom:12px;">📋 培训师视图：<span id="trainer-name-title"></span></div>
+    <!-- Trainer Summary -->
+    <div id="trainer-summary">
+      <div style="font-size:15px;font-weight:700;color:#1677ff;margin-bottom:12px;">培训师视图：<span id="trainer-name-title"></span></div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
         <div style="background:#fff;border-radius:8px;padding:14px 18px;text-align:center;">
           <div style="font-size:12px;color:#888;margin-bottom:6px;">名下参训人数</div>
@@ -286,7 +157,7 @@ tr:hover td { background: #fafcff; }
           <div style="font-size:11px;margin-top:2px;" id="ts-goal-tip"></div>
         </div>
         <div style="background:#fff;border-radius:8px;padding:14px 18px;text-align:center;">
-          <div style="font-size:12px;color:#888;margin-bottom:6px;">高风险人数（建议绩效打C）</div>
+          <div style="font-size:12px;color:#888;margin-bottom:6px;">高风险人数</div>
           <div style="font-size:24px;font-weight:700;color:#ff4d4f;" id="ts-high">—</div>
         </div>
         <div style="background:#fff;border-radius:8px;padding:14px 18px;text-align:center;">
@@ -298,52 +169,55 @@ tr:hover td { background: #fafcff; }
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div class="kpi-card">
+      <div class="kpi-card" onclick="kpiDrill('total')">
         <div class="label">参训总人次</div>
         <div class="value blue" id="kpi-total">—</div>
+        <div class="hint">点击查看全部</div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" onclick="kpiDrill('task1')">
         <div class="label">任务一达标率</div>
         <div class="value green" id="kpi-task1">—</div>
+        <div class="hint">点击筛选达标人员</div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" onclick="kpiDrill('task2')">
         <div class="label">任务二达标率</div>
         <div class="value green" id="kpi-task2">—</div>
+        <div class="hint">点击筛选达标人员</div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" onclick="kpiDrill('monitor')">
         <div class="label">仍在监控中人数</div>
         <div class="value orange" id="kpi-monitor">—</div>
+        <div class="hint">点击筛选监控人员</div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" onclick="kpiDrill('total')">
         <div class="label">尾部周期数</div>
         <div class="value" id="kpi-cycles">—</div>
+        <div class="hint">累计周期</div>
       </div>
-      <div class="kpi-card" style="border: 2px solid #d9d9d9;">
-        <div class="label">达标占比目标（&gt;75%）</div>
+      <div class="kpi-card" onclick="kpiDrill('total')" style="border:2px solid #d9d9d9;">
+        <div class="label">达标占比目标（>75%）</div>
         <div class="value" id="kpi-goal">—</div>
         <div style="font-size:12px;color:#888;margin-top:4px;" id="kpi-goal-tip"></div>
       </div>
     </div>
 
-    <!-- Repeat Trigger Banner -->
-    <div id="repeat-banner" style="display:none;background:#fff2f0;border:1px solid #ffccc7;border-radius:10px;padding:14px 24px;margin-bottom:24px;align-items:center;gap:24px;flex-wrap:wrap;">
+    <!-- Repeat Banner -->
+    <div id="repeat-banner">
       <div style="font-size:14px;font-weight:700;color:#ff4d4f;">⚠ 连续触发人员</div>
-      <div style="font-size:13px;color:#333;">共 <b id="repeat-count">0</b> 人连续触发尾部训，占参训总人数 <b id="repeat-pct">0%</b>（观测指标目标：占比持续下降）</div>
+      <div style="font-size:13px;color:#333;">共 <b id="repeat-count">0</b> 人连续触发，占参训总人数 <b id="repeat-pct">0%</b></div>
       <button onclick="toggleRepeatList()" style="margin-left:auto;padding:4px 14px;border:1px solid #ffccc7;border-radius:6px;background:#fff;color:#ff4d4f;font-size:13px;cursor:pointer;" id="repeat-toggle-btn">展开明细</button>
     </div>
-    <div id="repeat-list" style="display:none;background:#fff;border-radius:10px;padding:16px 24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+    <div id="repeat-list">
       <h3 style="font-size:14px;font-weight:600;color:#444;margin-bottom:12px;">连续触发人员明细</h3>
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <thead>
-          <tr>
-            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">姓名</th>
-            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">站点</th>
-            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">组织</th>
-            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">触发次数</th>
-            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">触发日期</th>
-            <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">培训师</th>
-          </tr>
-        </thead>
+        <thead><tr>
+          <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">姓名</th>
+          <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">站点</th>
+          <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">组织</th>
+          <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">触发次数</th>
+          <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">触发日期</th>
+          <th style="background:#fafafa;padding:8px 12px;text-align:left;border-bottom:1px solid #e8e8e8;color:#555;">培训师</th>
+        </tr></thead>
         <tbody id="repeat-tbody"></tbody>
       </table>
     </div>
@@ -351,34 +225,57 @@ tr:hover td { background: #fafcff; }
     <!-- Filters -->
     <div class="filter-card">
       <h3>筛选条件</h3>
+      <div class="active-filters" id="active-filters"></div>
       <div class="filter-row">
-        <div class="filter-item">
-          <label>周期</label>
-          <select id="f-cycle" onchange="applyFilters()"><option value="">全部</option></select>
+        <div class="date-range-item">
+          <label>触发日期范围</label>
+          <div class="date-range-row">
+            <input type="date" class="date-input" id="f-date-start" onchange="applyFilters()">
+            <span class="date-sep">至</span>
+            <input type="date" class="date-input" id="f-date-end" onchange="applyFilters()">
+          </div>
         </div>
         <div class="filter-item">
           <label>品类</label>
-          <select id="f-category" onchange="applyFilters()"><option value="">全部</option></select>
+          <div class="searchable-select" id="ss-category">
+            <input class="search-input" type="text" placeholder="搜索品类..." autocomplete="off">
+            <div class="dropdown"></div>
+          </div>
         </div>
         <div class="filter-item">
           <label>站点</label>
-          <select id="f-site" onchange="applyFilters()"><option value="">全部</option></select>
+          <div class="searchable-select" id="ss-site">
+            <input class="search-input" type="text" placeholder="搜索站点..." autocomplete="off">
+            <div class="dropdown"></div>
+          </div>
         </div>
         <div class="filter-item">
           <label>组织</label>
-          <select id="f-org" onchange="applyFilters()"><option value="">全部</option></select>
+          <div class="searchable-select" id="ss-org">
+            <input class="search-input" type="text" placeholder="搜索组织..." autocomplete="off">
+            <div class="dropdown"></div>
+          </div>
         </div>
         <div class="filter-item">
           <label>培训师</label>
-          <select id="f-trainer" onchange="applyFilters()"><option value="">全部</option></select>
+          <div class="searchable-select" id="ss-trainer">
+            <input class="search-input" type="text" placeholder="搜索培训师..." autocomplete="off">
+            <div class="dropdown"></div>
+          </div>
         </div>
         <div class="filter-item">
           <label>任务状态1</label>
-          <select id="f-status1" onchange="applyFilters()"><option value="">全部</option></select>
+          <div class="searchable-select" id="ss-status1">
+            <input class="search-input" type="text" placeholder="搜索状态..." autocomplete="off">
+            <div class="dropdown"></div>
+          </div>
         </div>
         <div class="filter-item">
           <label>任务状态2</label>
-          <select id="f-status2" onchange="applyFilters()"><option value="">全部</option></select>
+          <div class="searchable-select" id="ss-status2">
+            <input class="search-input" type="text" placeholder="搜索状态..." autocomplete="off">
+            <div class="dropdown"></div>
+          </div>
         </div>
         <button class="reset-btn" onclick="resetFilters()">重置</button>
       </div>
@@ -386,820 +283,397 @@ tr:hover td { background: #fafcff; }
 
     <!-- Charts -->
     <div class="charts-grid">
-      <div class="chart-card">
-        <h3>各周期参训人数趋势</h3>
-        <canvas id="chart-trend"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>各周期达标率趋势</h3>
-        <canvas id="chart-pass"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>各站点尾部人数分布</h3>
-        <canvas id="chart-site"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>各品类尾部人数分布</h3>
-        <canvas id="chart-cat"></canvas>
-      </div>
-      <div class="chart-card full">
-        <h3>各周期平均差异率趋势（含达标阈值参考线）</h3>
-        <canvas id="chart-diff"></canvas>
-      </div>
+      <div class="chart-card"><h3>各周期参训人数趋势</h3><canvas id="chart-trend"></canvas></div>
+      <div class="chart-card"><h3>各周期达标率趋势</h3><canvas id="chart-pass"></canvas></div>
+      <div class="chart-card"><h3>各站点尾部人数分布</h3><canvas id="chart-site"></canvas></div>
+      <div class="chart-card"><h3>各品类尾部人数分布</h3><canvas id="chart-cat"></canvas></div>
+      <div class="chart-card full"><h3>各周期平均差异率趋势（含达标阈值参考线）</h3><canvas id="chart-diff"></canvas></div>
     </div>
 
-    <!-- Risk Analysis -->
+    <!-- Risk Cards (collapsible) -->
     <div class="risk-card">
-      <h3>⚠️ 风险预警 — 智能质检中心</h3>
-      <div class="risk-section">
-        <div class="risk-section-title"><span class="risk-dot red"></span>高风险：两次任务均不过关</div>
-        <div class="risk-list" id="risk-center-high"></div>
+      <div class="risk-card-header" onclick="toggleRisk(this)">
+        <h3>⚠️ 风险预警 — 智能验机中心</h3>
+        <span class="risk-toggle">▼</span>
       </div>
-      <div class="risk-section">
-        <div class="risk-section-title"><span class="risk-dot orange"></span>中风险：任务一不过关且任务二仍在监控中</div>
-        <div class="risk-list" id="risk-center-mid"></div>
-      </div>
-      <div class="risk-section">
-        <div class="risk-section-title"><span class="risk-dot yellow"></span>关注：训后差异率高于触发差异率（越训越差）</div>
-        <div class="risk-list" id="risk-center-low"></div>
+      <div class="risk-card-body">
+        <div class="risk-section">
+          <div class="risk-section-title"><span class="risk-dot red"></span>高风险：两次任务均不过关</div>
+          <div class="risk-list" id="risk-center-high"></div>
+        </div>
+        <div class="risk-section">
+          <div class="risk-section-title"><span class="risk-dot orange"></span>中风险：任务一不过关且任务二仍在监控中</div>
+          <div class="risk-list" id="risk-center-mid"></div>
+        </div>
+        <div class="risk-section">
+          <div class="risk-section-title"><span class="risk-dot yellow"></span>关注：训后差异率高于触发差异率</div>
+          <div class="risk-list" id="risk-center-low"></div>
+        </div>
       </div>
     </div>
 
     <div class="risk-card">
-      <h3>⚠️ 风险预警 — 各地库及中心仓</h3>
-      <div class="risk-section">
-        <div class="risk-section-title"><span class="risk-dot red"></span>高风险：两次任务均不过关</div>
-        <div class="risk-list" id="risk-warehouse-high"></div>
+      <div class="risk-card-header" onclick="toggleRisk(this)">
+        <h3>⚠️ 风险预警 — 各地库及中心仓</h3>
+        <span class="risk-toggle">▼</span>
       </div>
-      <div class="risk-section">
-        <div class="risk-section-title"><span class="risk-dot orange"></span>中风险：任务一不过关且任务二仍在监控中</div>
-        <div class="risk-list" id="risk-warehouse-mid"></div>
-      </div>
-      <div class="risk-section">
-        <div class="risk-section-title"><span class="risk-dot yellow"></span>关注：训后差异率高于触发差异率（越训越差）</div>
-        <div class="risk-list" id="risk-warehouse-low"></div>
+      <div class="risk-card-body">
+        <div class="risk-section">
+          <div class="risk-section-title"><span class="risk-dot red"></span>高风险：两次任务均不过关</div>
+          <div class="risk-list" id="risk-warehouse-high"></div>
+        </div>
+        <div class="risk-section">
+          <div class="risk-section-title"><span class="risk-dot orange"></span>中风险：任务一不过关且任务二仍在监控中</div>
+          <div class="risk-list" id="risk-warehouse-mid"></div>
+        </div>
+        <div class="risk-section">
+          <div class="risk-section-title"><span class="risk-dot yellow"></span>关注：训后差异率高于触发差异率</div>
+          <div class="risk-list" id="risk-warehouse-low"></div>
+        </div>
       </div>
     </div>
 
     <!-- Detail Table -->
     <div class="table-card">
-      <h3>明细数据</h3>
+      <div class="table-card-header">
+        <h3>明细数据</h3>
+        <button class="export-btn" onclick="exportExcel()">导出 Excel</button>
+      </div>
       <div class="table-wrap">
         <table id="detail-table">
-          <thead>
-            <tr>
-              <th>触发尾部训日期</th>
-              <th>品类</th>
-              <th>站点</th>
-              <th>组织名称</th>
-              <th>姓名</th>
-              <th>培训师</th>
-              <th>触发差异率</th>
-              <th>任务一达训后数量</th>
-              <th>任务一是否达标</th>
-              <th>任务状态1</th>
-              <th>任务一训后差异量</th>
-              <th>任务一训后抽检量</th>
-              <th>任务一训后差异率</th>
-              <th>任务二达训后数量</th>
-              <th>任务二是否达标</th>
-              <th>任务状态2</th>
-              <th>任务二训后差异量</th>
-              <th>任务二训后抽检量</th>
-              <th>任务二训后差异率</th>
-            </tr>
-          </thead>
-          <tbody id="table-body">
-            <tr><td colspan="19" class="empty-tip">请上传 Excel 文件加载数据</td></tr>
-          </tbody>
+          <thead><tr>
+            <th>触发日期</th><th>品类</th><th>站点</th><th>组织名称</th><th>姓名</th><th>培训师</th>
+            <th>触发差异率</th><th>任务一达训后数量</th><th>任务一是否达标</th><th>任务状态1</th>
+            <th>任务一训后差异量</th><th>任务一训后抽检量</th><th>任务一训后差异率</th>
+            <th>任务二达训后数量</th><th>任务二是否达标</th><th>任务状态2</th>
+            <th>任务二训后差异量</th><th>任务二训后抽检量</th><th>任务二训后差异率</th>
+          </tr></thead>
+          <tbody id="table-body"><tr><td colspan="19" class="empty-tip">请上传 Excel 文件加载数据</td></tr></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
-
 <script>
-// ---- Password ----
-function checkPwd() {
-  const v = document.getElementById('pwd-input').value;
-  if (v === 'weibu') {
-    document.getElementById('pwd-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-  } else {
-    document.getElementById('pwd-error').textContent = '密码错误，请重试';
-    document.getElementById('pwd-input').value = '';
-  }
-}
+let allData=[],filteredData=[],charts={};
+const ssState={category:{val:'',opts:[]},site:{val:'',opts:[]},org:{val:'',opts:[]},trainer:{val:'',opts:[]},status1:{val:'',opts:[]},status2:{val:'',opts:[]}};
+const CHART_COLORS=['#4096ff','#52c41a','#fa8c16','#722ed1','#ff4d4f','#13c2c2'];
 
-// ---- Data ----
-let allData = [];
-let filteredData = [];
-let charts = {};
-
-const CHART_COLORS = ['#4096ff', '#52c41a', '#fa8c16', '#722ed1', '#ff4d4f', '#13c2c2'];
-const AXIS_COLOR = '#666';
-const GRID_COLOR = '#e8e8e8';
-
-function fmtDate(v) {
-  if (v === null || v === undefined || v === '') return '';
-  if (typeof v === 'number') {
-    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
-    return d.toISOString().slice(0, 10);
-  }
+function fmtDate(v){
+  if(v===null||v===undefined||v==='')return'';
+  if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400*1000));return d.toISOString().slice(0,10);}
   return String(v).trim();
 }
+function fmtPct(v){
+  if(v===null||v===undefined||v==='')return'';
+  const n=parseFloat(v);if(isNaN(n))return String(v);
+  if(Math.abs(n)>1)return n.toFixed(2)+'%';
+  return(n*100).toFixed(2)+'%';
+}
+function getVal(row,idx){return(row[idx]!==undefined&&row[idx]!==null)?row[idx]:'';}
 
-function fmtPct(v) {
-  if (v === null || v === undefined || v === '') return '';
-  const n = parseFloat(v);
-  if (isNaN(n)) return String(v);
-  // If value looks like it's already a percentage (>1), treat as-is
-  if (Math.abs(n) > 1) return n.toFixed(2) + '%';
-  return (n * 100).toFixed(2) + '%';
+function initAllSS(){
+  ['category','site','org','trainer','status1','status2'].forEach(id=>{
+    const wrap=document.getElementById('ss-'+id);
+    if(!wrap)return;
+    const input=wrap.querySelector('.search-input');
+    const dropdown=wrap.querySelector('.dropdown');
+    input.addEventListener('focus',()=>{renderDropdown(id);dropdown.classList.add('open');});
+    input.addEventListener('input',()=>{renderDropdown(id);dropdown.classList.add('open');});
+    document.addEventListener('click',(e)=>{if(!wrap.contains(e.target))dropdown.classList.remove('open');},{capture:false});
+  });
 }
 
-function getVal(row, idx) {
-  return (row[idx] !== undefined && row[idx] !== null) ? row[idx] : '';
+function populateSSOptions(){
+  const cols={category:1,site:2,org:3,trainer:5,status1:9,status2:12};
+  Object.keys(cols).forEach(id=>{
+    const vals=[...new Set(allData.map(r=>String(getVal(r,cols[id])).trim()).filter(v=>v!==''))].sort();
+    ssState[id].opts=vals;
+  });
 }
 
-function loadExcel(input) {
-  const file = input.files[0];
-  if (!file) return;
-  document.getElementById('file-name').textContent = file.name;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const wb = XLSX.read(e.target.result, { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    allData = raw.slice(3).filter(r => r.some(c => c !== '') && String(r[1]).trim() === '手机');
-    populateFilters();
+function renderDropdown(id){
+  const wrap=document.getElementById('ss-'+id);
+  const input=wrap.querySelector('.search-input');
+  const dropdown=wrap.querySelector('.dropdown');
+  const q=input.value.toLowerCase();
+  const opts=ssState[id].opts.filter(v=>v.toLowerCase().includes(q));
+  if(!opts.length){dropdown.innerHTML='<div class="no-result">无匹配结果</div>';return;}
+  dropdown.innerHTML=opts.map(v=>{
+    const sel=ssState[id].val===v?' selected':'';
+    const esc=v.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<div class="dropdown-item'+sel+'" onclick="selectSS(\''+id+'\',\''+esc+'\')">'+v+'</div>';
+  }).join('');
+}
+
+function selectSS(id,val){
+  const wrap=document.getElementById('ss-'+id);
+  const input=wrap.querySelector('.search-input');
+  const dropdown=wrap.querySelector('.dropdown');
+  if(ssState[id].val===val){ssState[id].val='';input.value='';}
+  else{ssState[id].val=val;input.value=val;}
+  dropdown.classList.remove('open');
+  applyFilters();
+}
+
+function renderActiveTags(){
+  const container=document.getElementById('active-filters');
+  const tags=[];
+  const ds=document.getElementById('f-date-start').value;
+  const de=document.getElementById('f-date-end').value;
+  if(ds||de)tags.push({label:'日期: '+(ds||'...')+' ~ '+(de||'...'),id:'date'});
+  const labels={category:'品类',site:'站点',org:'组织',trainer:'培训师',status1:'状态1',status2:'状态2'};
+  Object.keys(ssState).forEach(id=>{if(ssState[id].val)tags.push({label:labels[id]+': '+ssState[id].val,id:id});});
+  container.innerHTML=tags.map(t=>'<span class="filter-tag">'+t.label+'<span class="remove" onclick="clearTagById(\''+t.id+'\')">×</span></span>').join('');
+}
+
+function clearTagById(id){
+  if(id==='date'){document.getElementById('f-date-start').value='';document.getElementById('f-date-end').value='';}
+  else{ssState[id].val='';const w=document.getElementById('ss-'+id);if(w)w.querySelector('.search-input').value='';}
+  applyFilters();
+}
+
+function loadExcel(input){
+  const file=input.files[0];if(!file)return;
+  document.getElementById('file-name').textContent=file.name;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const wb=XLSX.read(e.target.result,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    allData=raw.slice(3).filter(r=>r.some(c=>c!=='')&&String(r[1]).trim()==='手机');
+    populateSSOptions();
     applyFilters();
-    if (getGHConfig().token) {
-      document.getElementById('publish-btn').style.display = 'inline-block';
-    }
+    if(getGHConfig().token)document.getElementById('publish-btn').style.display='inline-block';
   };
   reader.readAsArrayBuffer(file);
 }
 
-function populateFilters() {
-  const fields = [
-    { id: 'f-cycle',    col: 0, fmt: fmtDate },
-    { id: 'f-category', col: 1, fmt: v => String(v).trim() },
-    { id: 'f-site',     col: 2, fmt: v => String(v).trim() },
-    { id: 'f-org',      col: 3, fmt: v => String(v).trim() },
-    { id: 'f-trainer',  col: 5, fmt: v => String(v).trim() },
-    { id: 'f-status1',  col: 9, fmt: v => String(v).trim() },
-    { id: 'f-status2',  col: 12, fmt: v => String(v).trim() },
-  ];
-  fields.forEach(({ id, col, fmt }) => {
-    const sel = document.getElementById(id);
-    const vals = [...new Set(allData.map(r => fmt(getVal(r, col))).filter(v => v !== ''))].sort();
-    sel.innerHTML = '<option value="">全部</option>' + vals.map(v => `<option value="${v}">${v}</option>`).join('');
-  });
-}
-
-function applyFilters() {
-  const cycle   = document.getElementById('f-cycle').value;
-  const cat     = document.getElementById('f-category').value;
-  const site    = document.getElementById('f-site').value;
-  const org     = document.getElementById('f-org').value;
-  const trainer = document.getElementById('f-trainer').value;
-  const s1      = document.getElementById('f-status1').value;
-  const s2      = document.getElementById('f-status2').value;
-
-  filteredData = allData.filter(r => {
-    if (cycle   && fmtDate(getVal(r, 0)) !== cycle) return false;
-    if (cat     && String(getVal(r, 1)).trim() !== cat) return false;
-    if (site    && String(getVal(r, 2)).trim() !== site) return false;
-    if (org     && String(getVal(r, 3)).trim() !== org) return false;
-    if (trainer && String(getVal(r, 5)).trim() !== trainer) return false;
-    if (s1      && String(getVal(r, 9)).trim() !== s1) return false;
-    if (s2      && String(getVal(r, 12)).trim() !== s2) return false;
+function applyFilters(){
+  document.querySelectorAll('.kpi-card').forEach(c=>c.classList.remove('active'));
+  const ds=document.getElementById('f-date-start').value;
+  const de=document.getElementById('f-date-end').value;
+  filteredData=allData.filter(r=>{
+    const d=fmtDate(getVal(r,0));
+    if(ds&&d<ds)return false;
+    if(de&&d>de)return false;
+    if(ssState.category.val&&String(getVal(r,1)).trim()!==ssState.category.val)return false;
+    if(ssState.site.val&&String(getVal(r,2)).trim()!==ssState.site.val)return false;
+    if(ssState.org.val&&String(getVal(r,3)).trim()!==ssState.org.val)return false;
+    if(ssState.trainer.val&&String(getVal(r,5)).trim()!==ssState.trainer.val)return false;
+    if(ssState.status1.val&&String(getVal(r,9)).trim()!==ssState.status1.val)return false;
+    if(ssState.status2.val&&String(getVal(r,12)).trim()!==ssState.status2.val)return false;
     return true;
   });
-
-  updateKPIs();
-  updateTrainerSummary();
-  updateRepeatTrigger();
-  updateRisks();
-  updateCharts();
-  updateTable();
+  renderActiveTags();
+  updateKPIs();updateTrainerSummary();updateRepeatTrigger();updateRisks();updateCharts();updateTable();
 }
 
-function resetFilters() {
-  ['f-cycle','f-category','f-site','f-org','f-trainer','f-status1','f-status2'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+function resetFilters(){
+  document.getElementById('f-date-start').value='';
+  document.getElementById('f-date-end').value='';
+  Object.keys(ssState).forEach(id=>{ssState[id].val='';const w=document.getElementById('ss-'+id);if(w)w.querySelector('.search-input').value='';});
   applyFilters();
 }
 
-// ---- Trainer Summary ----
-function updateTrainerSummary() {
-  const trainer = document.getElementById('f-trainer').value;
-  const card = document.getElementById('trainer-summary');
-  if (!trainer) { card.style.display = 'none'; return; }
-
-  card.style.display = 'block';
-  document.getElementById('trainer-name-title').textContent = trainer;
-
-  const total = filteredData.length;
-  document.getElementById('ts-total').textContent = total || '0';
-
-  // 达标占比
-  const finalPass = filteredData.filter(r => {
-    const s1 = String(getVal(r, 9)).trim();
-    const s2 = String(getVal(r, 12)).trim();
-    return s1 === '达标' || s1 === '回归日常监控' || s2 === '达标' || s2 === '回归日常监控';
-  }).length;
-  const goalPct = total ? (finalPass / total * 100) : null;
-  const goalEl = document.getElementById('ts-goal');
-  const goalTip = document.getElementById('ts-goal-tip');
-  if (goalPct === null) {
-    goalEl.textContent = '—'; goalEl.style.color = '#333'; goalTip.textContent = '';
-  } else {
-    goalEl.textContent = goalPct.toFixed(1) + '%';
-    if (goalPct >= 75) {
-      goalEl.style.color = '#52c41a'; goalTip.textContent = '✓ 已达目标'; goalTip.style.color = '#52c41a';
-    } else {
-      goalEl.style.color = '#ff4d4f';
-      goalTip.textContent = '✗ 差 ' + (75 - goalPct).toFixed(1) + '%';
-      goalTip.style.color = '#ff4d4f';
-    }
-  }
-
-  // 高风险人数
-  const high = filteredData.filter(r =>
-    String(getVal(r, 9)).includes('不过关') && String(getVal(r, 12)).includes('不过关')
-  ).length;
-  document.getElementById('ts-high').textContent = high || '0';
-
-  // 连续触发人数
-  const map = {};
-  filteredData.forEach(r => {
-    const key = [String(getVal(r, 4)).trim(), String(getVal(r, 2)).trim(), String(getVal(r, 3)).trim()].join('|');
-    if (!map[key]) map[key] = 0;
-    map[key]++;
-  });
-  const repeatCount = Object.values(map).filter(v => v >= 2).length;
-  document.getElementById('ts-repeat').textContent = repeatCount || '0';
+function kpiDrill(type){
+  document.querySelectorAll('.kpi-card').forEach(c=>c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  let drill=filteredData;
+  if(type==='task1')drill=filteredData.filter(r=>String(getVal(r,8)).trim()==='达标');
+  else if(type==='task2')drill=filteredData.filter(r=>String(getVal(r,11)).trim()==='达标');
+  else if(type==='monitor')drill=filteredData.filter(r=>String(getVal(r,12)).includes('监控'));
+  renderTable(drill);
+  document.querySelector('.table-card').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-// ---- Repeat Trigger ----
-function toggleRepeatList() {
-  const list = document.getElementById('repeat-list');
-  const btn  = document.getElementById('repeat-toggle-btn');
-  if (list.style.display === 'none') {
-    list.style.display = 'block';
-    btn.textContent = '收起明细';
-  } else {
-    list.style.display = 'none';
-    btn.textContent = '展开明细';
-  }
+function updateKPIs(){
+  const total=filteredData.length;
+  const t1pass=filteredData.filter(r=>String(getVal(r,8)).trim()==='达标').length;
+  const t2pass=filteredData.filter(r=>String(getVal(r,11)).trim()==='达标').length;
+  const monitor=filteredData.filter(r=>String(getVal(r,12)).includes('监控')).length;
+  const cycles=new Set(filteredData.map(r=>fmtDate(getVal(r,0))).filter(v=>v)).size;
+  const finalPass=filteredData.filter(r=>{const s1=String(getVal(r,9)).trim(),s2=String(getVal(r,12)).trim();return s1==='达标'||s1==='回归日常监控'||s2==='达标'||s2==='回归日常监控';}).length;
+  const goalPct=total?(finalPass/total*100):null;
+  document.getElementById('kpi-total').textContent=total||'—';
+  document.getElementById('kpi-task1').textContent=total?(t1pass/total*100).toFixed(1)+'%':'—';
+  document.getElementById('kpi-task2').textContent=total?(t2pass/total*100).toFixed(1)+'%':'—';
+  document.getElementById('kpi-monitor').textContent=total?monitor:'—';
+  document.getElementById('kpi-cycles').textContent=cycles||'—';
+  const goalEl=document.getElementById('kpi-goal'),goalTip=document.getElementById('kpi-goal-tip');
+  if(goalPct===null){goalEl.textContent='—';goalEl.className='value';goalTip.textContent='';}
+  else{goalEl.textContent=goalPct.toFixed(1)+'%';if(goalPct>=75){goalEl.className='value green';goalTip.textContent='✓ 已达目标';goalTip.style.color='#52c41a';}else{goalEl.className='value';goalEl.style.color='#ff4d4f';goalTip.textContent='✗ 差'+(75-goalPct).toFixed(1)+'%';goalTip.style.color='#ff4d4f';}}
 }
 
-function updateRepeatTrigger() {
-  // 用姓名+站点+组织作为唯一标识
-  const map = {};
-  filteredData.forEach(r => {
-    const key = [String(getVal(r, 4)).trim(), String(getVal(r, 2)).trim(), String(getVal(r, 3)).trim()].join('|');
-    if (!map[key]) map[key] = [];
-    map[key].push(r);
-  });
+function updateTrainerSummary(){
+  const trainer=ssState.trainer.val;
+  const card=document.getElementById('trainer-summary');
+  if(!trainer){card.style.display='none';return;}
+  card.style.display='block';
+  document.getElementById('trainer-name-title').textContent=trainer;
+  const total=filteredData.length;
+  document.getElementById('ts-total').textContent=total||'0';
+  const finalPass=filteredData.filter(r=>{const s1=String(getVal(r,9)).trim(),s2=String(getVal(r,12)).trim();return s1==='达标'||s1==='回归日常监控'||s2==='达标'||s2==='回归日常监控';}).length;
+  const goalPct=total?(finalPass/total*100):null;
+  const goalEl=document.getElementById('ts-goal'),goalTip=document.getElementById('ts-goal-tip');
+  if(goalPct===null){goalEl.textContent='—';goalEl.style.color='#333';goalTip.textContent='';}
+  else{goalEl.textContent=goalPct.toFixed(1)+'%';if(goalPct>=75){goalEl.style.color='#52c41a';goalTip.textContent='✓ 已达目标';goalTip.style.color='#52c41a';}else{goalEl.style.color='#ff4d4f';goalTip.textContent='✗ 差'+(75-goalPct).toFixed(1)+'%';goalTip.style.color='#ff4d4f';}}
+  const high=filteredData.filter(r=>String(getVal(r,9)).includes('不过关')&&String(getVal(r,12)).includes('不过关')).length;
+  document.getElementById('ts-high').textContent=high||'0';
+  const map={};filteredData.forEach(r=>{const k=[String(getVal(r,4)).trim(),String(getVal(r,2)).trim(),String(getVal(r,3)).trim()].join('|');if(!map[k])map[k]=0;map[k]++;});
+  document.getElementById('ts-repeat').textContent=Object.values(map).filter(v=>v>=2).length||'0';
+}
 
-  const repeatEntries = Object.entries(map).filter(([, rows]) => rows.length >= 2);
-  const repeatCount = repeatEntries.length;
-  const total = Object.keys(map).length; // 去重后总人数
-  const pct = total ? (repeatCount / total * 100).toFixed(1) : 0;
+function toggleRepeatList(){
+  const list=document.getElementById('repeat-list'),btn=document.getElementById('repeat-toggle-btn');
+  if(list.style.display==='none'){list.style.display='block';btn.textContent='收起明细';}
+  else{list.style.display='none';btn.textContent='展开明细';}
+}
 
-  const banner = document.getElementById('repeat-banner');
-  if (repeatCount === 0) {
-    banner.style.display = 'none';
-    document.getElementById('repeat-list').style.display = 'none';
-    return;
-  }
-  banner.style.display = 'flex';
-  document.getElementById('repeat-count').textContent = repeatCount;
-  document.getElementById('repeat-pct').textContent = pct + '%';
-
-  // 按触发次数降序排列
-  repeatEntries.sort((a, b) => b[1].length - a[1].length);
-
-  const tbody = document.getElementById('repeat-tbody');
-  tbody.innerHTML = repeatEntries.map(([, rows]) => {
-    const name    = getVal(rows[0], 4);
-    const site    = getVal(rows[0], 2);
-    const org     = getVal(rows[0], 3);
-    const trainer = getVal(rows[0], 5);
-    const dates   = rows.map(r => fmtDate(getVal(r, 0))).sort().join('、');
-    const count   = rows.length;
-    const countColor = count >= 3 ? '#ff4d4f' : '#fa8c16';
-    return `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-weight:600;">${name}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${site}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${org}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-weight:700;color:${countColor};">${count} 次</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#888;">${dates}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${trainer}</td>
-    </tr>`;
+function updateRepeatTrigger(){
+  const map={};
+  filteredData.forEach(r=>{const k=[String(getVal(r,4)).trim(),String(getVal(r,2)).trim(),String(getVal(r,3)).trim()].join('|');if(!map[k])map[k]=[];map[k].push(r);});
+  const repeatEntries=Object.entries(map).filter(([,rows])=>rows.length>=2);
+  const banner=document.getElementById('repeat-banner');
+  if(!repeatEntries.length){banner.style.display='none';document.getElementById('repeat-list').style.display='none';return;}
+  banner.style.display='flex';
+  document.getElementById('repeat-count').textContent=repeatEntries.length;
+  document.getElementById('repeat-pct').textContent=(repeatEntries.length/Object.keys(map).length*100).toFixed(1)+'%';
+  repeatEntries.sort((a,b)=>b[1].length-a[1].length);
+  document.getElementById('repeat-tbody').innerHTML=repeatEntries.map(([,rows])=>{
+    const name=getVal(rows[0],4),site=getVal(rows[0],2),org=getVal(rows[0],3),trainer=getVal(rows[0],5);
+    const dates=rows.map(r=>fmtDate(getVal(r,0))).sort().join('、');
+    const count=rows.length,color=count>=3?'#ff4d4f':'#fa8c16';
+    return '<tr><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-weight:600;">'+name+'</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">'+site+'</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">'+org+'</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-weight:700;color:'+color+';">'+count+' 次</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#888;">'+dates+'</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">'+trainer+'</td></tr>';
   }).join('');
 }
 
-// ---- KPIs ----
-function updateKPIs() {
-  const total   = filteredData.length;
-  const t1pass  = filteredData.filter(r => String(getVal(r, 8)).trim() === '达标').length;
-  const t2pass  = filteredData.filter(r => String(getVal(r, 11)).trim() === '达标').length;
-  const monitor = filteredData.filter(r => String(getVal(r, 12)).includes('监控')).length;
-  const cycles  = new Set(filteredData.map(r => fmtDate(getVal(r, 0))).filter(v => v)).size;
-
-  // 达标占比：任务一或任务二最终达标的人 / 总人数
-  // 达标 = 任务状态1为"达标"或"回归日常监控"，或任务状态2为"达标"或"回归日常监控"
-  const finalPass = filteredData.filter(r => {
-    const s1 = String(getVal(r, 9)).trim();
-    const s2 = String(getVal(r, 12)).trim();
-    return s1 === '达标' || s1 === '回归日常监控' || s2 === '达标' || s2 === '回归日常监控';
-  }).length;
-  const goalPct = total ? (finalPass / total * 100) : null;
-
-  document.getElementById('kpi-total').textContent   = total || '—';
-  document.getElementById('kpi-task1').textContent   = total ? (t1pass / total * 100).toFixed(1) + '%' : '—';
-  document.getElementById('kpi-task2').textContent   = total ? (t2pass / total * 100).toFixed(1) + '%' : '—';
-  document.getElementById('kpi-monitor').textContent = total ? monitor : '—';
-  document.getElementById('kpi-cycles').textContent  = cycles || '—';
-
-  const goalEl = document.getElementById('kpi-goal');
-  const goalTip = document.getElementById('kpi-goal-tip');
-  if (goalPct === null) {
-    goalEl.textContent = '—';
-    goalEl.className = 'value';
-    goalTip.textContent = '';
-  } else {
-    goalEl.textContent = goalPct.toFixed(1) + '%';
-    if (goalPct >= 75) {
-      goalEl.className = 'value green';
-      goalTip.textContent = '✓ 已达目标';
-      document.querySelector('.kpi-card:last-child').style.borderColor = '#b7eb8f';
-    } else {
-      goalEl.className = 'value';
-      goalEl.style.color = '#ff4d4f';
-      goalTip.textContent = '✗ 未达目标（差 ' + (75 - goalPct).toFixed(1) + '%）';
-      document.querySelector('.kpi-card:last-child').style.borderColor = '#ffccc7';
-    }
-  }
+function toggleRisk(header){
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
 }
 
-// ---- Charts ----
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-}
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function scaleDefaults(){return{x:{ticks:{color:'#666',font:{size:11}},grid:{color:'#e8e8e8'}},y:{ticks:{color:'#666',font:{size:11}},grid:{color:'#e8e8e8'}}};}
+function groupBy(data,keyFn){const map={};data.forEach(r=>{const k=keyFn(r);if(!map[k])map[k]=[];map[k].push(r);});return map;}
 
-function scaleDefaults() {
-  return {
-    x: { ticks: { color: AXIS_COLOR, font: { size: 11 } }, grid: { color: GRID_COLOR } },
-    y: { ticks: { color: AXIS_COLOR, font: { size: 11 } }, grid: { color: GRID_COLOR } }
-  };
-}
-
-function makeLineChart(id, labels, datasets) {
-  destroyChart(id);
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      plugins: { legend: { labels: { color: '#555', font: { size: 12 } } } },
-      scales: scaleDefaults()
-    }
-  });
-}
-
-function makeBarChart(id, labels, data, label) {
-  destroyChart(id);
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label,
-        data,
-        backgroundColor: CHART_COLORS[0] + 'cc',
-        borderColor: CHART_COLORS[0],
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: scaleDefaults()
-    }
-  });
-}
-
-function groupBy(data, keyFn) {
-  const map = {};
-  data.forEach(r => {
-    const k = keyFn(r);
-    if (!map[k]) map[k] = [];
-    map[k].push(r);
-  });
-  return map;
-}
-
-function updateCharts() {
-  const byCycle = groupBy(filteredData, r => fmtDate(getVal(r, 0)));
-  const cycleKeys = Object.keys(byCycle).filter(k => k).sort();
-
-  // 1. Trend: count per cycle
-  makeLineChart('chart-trend', cycleKeys, [{
-    label: '参训人数',
-    data: cycleKeys.map(k => byCycle[k].length),
-    borderColor: CHART_COLORS[0],
-    backgroundColor: CHART_COLORS[0] + '22',
-    tension: 0.3, fill: true, pointRadius: 4,
-  }]);
-
-  // 2. Pass rate trend
-  makeLineChart('chart-pass', cycleKeys, [
-    {
-      label: '任务一达标率(%)',
-      data: cycleKeys.map(k => {
-        const rows = byCycle[k];
-        const pass = rows.filter(r => String(getVal(r, 8)).trim() === '达标').length;
-        return rows.length ? +(pass / rows.length * 100).toFixed(1) : 0;
-      }),
-      borderColor: CHART_COLORS[1],
-      backgroundColor: CHART_COLORS[1] + '22',
-      tension: 0.3, fill: false, pointRadius: 4,
-    },
-    {
-      label: '任务二达标率(%)',
-      data: cycleKeys.map(k => {
-        const rows = byCycle[k];
-        const pass = rows.filter(r => String(getVal(r, 11)).trim() === '达标').length;
-        return rows.length ? +(pass / rows.length * 100).toFixed(1) : 0;
-      }),
-      borderColor: CHART_COLORS[2],
-      backgroundColor: CHART_COLORS[2] + '22',
-      tension: 0.3, fill: false, pointRadius: 4,
-    }
-  ]);
-
-  // 3. By site
-  const bySite = groupBy(filteredData, r => String(getVal(r, 2)).trim() || '未知');
-  const siteKeys = Object.keys(bySite).sort((a, b) => bySite[b].length - bySite[a].length);
-  makeBarChart('chart-site', siteKeys, siteKeys.map(k => bySite[k].length), '尾部人数');
-
-  // 4. By category
-  const byCat = groupBy(filteredData, r => String(getVal(r, 1)).trim() || '未知');
-  const catKeys = Object.keys(byCat).sort((a, b) => byCat[b].length - byCat[a].length);
-  makeBarChart('chart-cat', catKeys, catKeys.map(k => byCat[k].length), '尾部人数');
-
-  // 5. Avg diff rates per cycle + threshold lines
+function updateCharts(){
+  const byCycle=groupBy(filteredData,r=>fmtDate(getVal(r,0)));
+  const cycleKeys=Object.keys(byCycle).filter(k=>k).sort();
+  destroyChart('chart-trend');
+  charts['chart-trend']=new Chart(document.getElementById('chart-trend').getContext('2d'),{type:'line',data:{labels:cycleKeys,datasets:[{label:'参训人数',data:cycleKeys.map(k=>byCycle[k].length),borderColor:CHART_COLORS[0],backgroundColor:CHART_COLORS[0]+'22',tension:0.3,fill:true,pointRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:'#555',font:{size:12}}}},scales:scaleDefaults()}});
+  destroyChart('chart-pass');
+  charts['chart-pass']=new Chart(document.getElementById('chart-pass').getContext('2d'),{type:'line',data:{labels:cycleKeys,datasets:[{label:'任务一达标率(%)',data:cycleKeys.map(k=>{const rows=byCycle[k];const pass=rows.filter(r=>String(getVal(r,8)).trim()==='达标').length;return rows.length?+(pass/rows.length*100).toFixed(1):0;}),borderColor:CHART_COLORS[1],tension:0.3,fill:false,pointRadius:4},{label:'任务二达标率(%)',data:cycleKeys.map(k=>{const rows=byCycle[k];const pass=rows.filter(r=>String(getVal(r,11)).trim()==='达标').length;return rows.length?+(pass/rows.length*100).toFixed(1):0;}),borderColor:CHART_COLORS[2],tension:0.3,fill:false,pointRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:'#555',font:{size:12}}}},scales:scaleDefaults()}});
+  const bySite=groupBy(filteredData,r=>String(getVal(r,2)).trim()||'未知');
+  const siteKeys=Object.keys(bySite).sort((a,b)=>bySite[b].length-bySite[a].length);
+  destroyChart('chart-site');
+  charts['chart-site']=new Chart(document.getElementById('chart-site').getContext('2d'),{type:'bar',data:{labels:siteKeys,datasets:[{label:'尾部人数',data:siteKeys.map(k=>bySite[k].length),backgroundColor:CHART_COLORS[0]+'cc',borderColor:CHART_COLORS[0],borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:scaleDefaults()}});
+  const byCat=groupBy(filteredData,r=>String(getVal(r,1)).trim()||'未知');
+  const catKeys=Object.keys(byCat).sort((a,b)=>byCat[b].length-byCat[a].length);
+  destroyChart('chart-cat');
+  charts['chart-cat']=new Chart(document.getElementById('chart-cat').getContext('2d'),{type:'bar',data:{labels:catKeys,datasets:[{label:'尾部人数',data:catKeys.map(k=>byCat[k].length),backgroundColor:CHART_COLORS[3]+'cc',borderColor:CHART_COLORS[3],borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:scaleDefaults()}});
   destroyChart('chart-diff');
-  const ctxDiff = document.getElementById('chart-diff').getContext('2d');
-  charts['chart-diff'] = new Chart(ctxDiff, {
-    type: 'line',
-    data: {
-      labels: cycleKeys,
-      datasets: [
-        {
-          label: '平均触发差异率(%)',
-          data: cycleKeys.map(k => {
-            const rows = byCycle[k];
-            const vals = rows.map(r => parseFloat(getVal(r, 13))).filter(v => !isNaN(v));
-            if (!vals.length) return null;
-            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-            return +(Math.abs(avg) > 1 ? avg.toFixed(2) : (avg * 100).toFixed(2));
-          }),
-          borderColor: CHART_COLORS[3],
-          backgroundColor: CHART_COLORS[3] + '22',
-          tension: 0.3, fill: false, pointRadius: 4,
-        },
-        {
-          label: '平均任务一训后差异率(%)',
-          data: cycleKeys.map(k => {
-            const rows = byCycle[k];
-            const vals = rows.map(r => parseFloat(getVal(r, 16))).filter(v => !isNaN(v));
-            if (!vals.length) return null;
-            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-            return +(Math.abs(avg) > 1 ? avg.toFixed(2) : (avg * 100).toFixed(2));
-          }),
-          borderColor: CHART_COLORS[1],
-          backgroundColor: CHART_COLORS[1] + '22',
-          tension: 0.3, fill: false, pointRadius: 4,
-        },
-        {
-          label: '平均任务二训后差异率(%)',
-          data: cycleKeys.map(k => {
-            const rows = byCycle[k];
-            const vals = rows.map(r => parseFloat(getVal(r, 79))).filter(v => !isNaN(v));
-            if (!vals.length) return null;
-            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-            return +(Math.abs(avg) > 1 ? avg.toFixed(2) : (avg * 100).toFixed(2));
-          }),
-          borderColor: CHART_COLORS[2],
-          backgroundColor: CHART_COLORS[2] + '22',
-          tension: 0.3, fill: false, pointRadius: 4,
-        },
-        {
-          label: '任务一达标线(7.5%)',
-          data: cycleKeys.map(() => 7.5),
-          borderColor: '#ff4d4f',
-          borderDash: [6, 4],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-        },
-        {
-          label: '任务二达标线(6%)',
-          data: cycleKeys.map(() => 6),
-          borderColor: '#fa8c16',
-          borderDash: [6, 4],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { labels: { color: '#555', font: { size: 12 } } } },
-      scales: scaleDefaults()
-    }
-  });
+  charts['chart-diff']=new Chart(document.getElementById('chart-diff').getContext('2d'),{type:'line',data:{labels:cycleKeys,datasets:[{label:'平均触发差异率(%)',data:cycleKeys.map(k=>{const vals=byCycle[k].map(r=>parseFloat(getVal(r,13))).filter(v=>!isNaN(v));if(!vals.length)return null;const avg=vals.reduce((a,b)=>a+b,0)/vals.length;return+(Math.abs(avg)>1?avg.toFixed(2):(avg*100).toFixed(2));}),borderColor:CHART_COLORS[3],tension:0.3,fill:false,pointRadius:4},{label:'平均任务一训后差异率(%)',data:cycleKeys.map(k=>{const vals=byCycle[k].map(r=>parseFloat(getVal(r,16))).filter(v=>!isNaN(v));if(!vals.length)return null;const avg=vals.reduce((a,b)=>a+b,0)/vals.length;return+(Math.abs(avg)>1?avg.toFixed(2):(avg*100).toFixed(2));}),borderColor:CHART_COLORS[1],tension:0.3,fill:false,pointRadius:4},{label:'任务二达标线(6%)',data:cycleKeys.map(()=>6),borderColor:'#fa8c16',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false},{label:'任务一达标线(7.5%)',data:cycleKeys.map(()=>7.5),borderColor:'#ff4d4f',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false}]},options:{responsive:true,plugins:{legend:{labels:{color:'#555',font:{size:12}}}},scales:scaleDefaults()}});
 }
 
-// ---- Risk Analysis ----
-function topN(arr, keyFn, n) {
-  const map = {};
-  arr.forEach(r => { const k = keyFn(r); map[k] = (map[k] || 0) + 1; });
-  return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, n);
+function topN(arr,keyFn,n){const map={};arr.forEach(r=>{const k=keyFn(r);map[k]=(map[k]||0)+1;});return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,n);}
+
+function buildSummary(list,level){
+  if(!list.length)return '<div class="no-risk">暂无'+level+'人员</div>';
+  const topSites=topN(list,r=>String(getVal(r,2)).trim(),3);
+  const topTrainers=topN(list,r=>String(getVal(r,5)).trim(),3);
+  const topOrgs=topN(list,r=>String(getVal(r,3)).trim(),2);
+  let suggestion='';
+  if(level==='高风险')suggestion='建议优先约谈问题最集中的培训师，排查带教方式是否存在系统性问题，并对这批人员启动一对一辅导。';
+  else if(level==='中风险')suggestion='建议跟进任务二监控进展，重点关注已超期未达标人员，评估是否需要调整培训方案。';
+  else suggestion='建议排查训后数据采集是否准确，同时关注培训内容是否与实际操作脱节，及时调整培训重点。';
+  return '<div class="risk-summary">共 <b>'+list.length+'</b> 人。站点集中在 '+topSites.map(([k,v])=>'<b>'+k+'</b>（'+v+'人）').join('、')+'；培训师集中在 '+topTrainers.map(([k,v])=>'<b>'+k+'</b>（'+v+'人）').join('、')+'；组织集中在 '+topOrgs.map(([k,v])=>'<b>'+k+'</b>（'+v+'人）').join('、')+'。<span class="risk-suggest">💡 '+suggestion+'</span></div>';
 }
 
-function buildSummary(list, level) {
-  if (!list.length) return '<div class="no-risk">暂无' + level + '人员</div>';
-  const total = list.length;
-  const topSites = topN(list, r => String(getVal(r, 2)).trim(), 3);
-  const topTrainers = topN(list, r => String(getVal(r, 5)).trim(), 3);
-  const topOrgs = topN(list, r => String(getVal(r, 3)).trim(), 2);
-
-  const siteStr = topSites.map(([k, v]) => '<b>' + k + '</b>（' + v + '人）').join('、');
-  const trainerStr = topTrainers.map(([k, v]) => '<b>' + k + '</b>（' + v + '人）').join('、');
-  const orgStr = topOrgs.map(([k, v]) => '<b>' + k + '</b>（' + v + '人）').join('、');
-
-  let suggestion = '';
-  if (level === '高风险') {
-    suggestion = '建议优先约谈问题最集中的培训师，排查带教方式是否存在系统性问题，并对这批人员启动一对一辅导。';
-  } else if (level === '中风险') {
-    suggestion = '建议跟进任务二监控进展，重点关注已超期未达标人员，评估是否需要调整培训方案。';
-  } else {
-    suggestion = '建议排查训后数据采集是否准确，同时关注培训内容是否与实际操作脱节，及时调整培训重点。';
+function updateRisks(){
+  function riskItem(r,cls,valHtml){return '<div class="risk-item '+cls+'"><span class="risk-name">'+getVal(r,4)+'</span><span class="risk-info">'+getVal(r,2)+' | '+getVal(r,3)+' | 培训师：'+getVal(r,5)+' | '+fmtDate(getVal(r,0))+'</span><span class="risk-val">'+valHtml+'</span></div>';}
+  const centerData=filteredData.filter(r=>String(getVal(r,2)).includes('智能验机中心'));
+  const warehouseData=filteredData.filter(r=>!String(getVal(r,2)).includes('智能验机中心'));
+  function getRisks(data){
+    return{
+      high:data.filter(r=>String(getVal(r,9)).includes('不过关')&&String(getVal(r,12)).includes('不过关')),
+      mid:data.filter(r=>String(getVal(r,9)).includes('不过关')&&String(getVal(r,12)).includes('监控')),
+      low:data.filter(r=>{const t=parseFloat(getVal(r,13)),a=parseFloat(getVal(r,16));if(isNaN(t)||isNaN(a))return false;const tv=Math.abs(t)>1?t/100:t,av=Math.abs(a)>1?a/100:a;return av>tv;})
+    };
   }
-
-  return '<div class="risk-summary">' +
-    '共 <b>' + total + '</b> 人' + (level === '高风险' ? '两次任务均不过关' : level === '中风险' ? '任务一不过关且仍在监控' : '训后差异率高于触发差异率') + '。' +
-    '站点集中在 ' + siteStr + '；' +
-    '培训师集中在 ' + trainerStr + '；' +
-    '组织集中在 ' + orgStr + '。' +
-    '<span class="risk-suggest">💡 ' + suggestion + '</span>' +
-    '</div>';
+  function renderSection(elId,list,cls,labelFn,level){document.getElementById(elId).innerHTML=buildSummary(list,level)+list.map(r=>riskItem(r,cls,labelFn(r))).join('');}
+  const c=getRisks(centerData),w=getRisks(warehouseData);
+  const highLabel=r=>'状态1：'+String(getVal(r,9)).trim()+' | 状态2：'+String(getVal(r,12)).trim()+' <span style="background:#ff4d4f;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;margin-left:6px;">建议绩效打C</span>';
+  const midLabel=r=>'状态1：'+String(getVal(r,9)).trim()+' | 状态2：'+String(getVal(r,12)).trim();
+  const lowLabel=r=>{const t=parseFloat(getVal(r,13)),a=parseFloat(getVal(r,16));const tv=Math.abs(t)>1?t:t*100,av=Math.abs(a)>1?a:a*100;return'触发：'+tv.toFixed(2)+'% → 训后：'+av.toFixed(2)+'%';};
+  renderSection('risk-center-high',c.high,'red',highLabel,'高风险');
+  renderSection('risk-center-mid',c.mid,'orange',midLabel,'中风险');
+  renderSection('risk-center-low',c.low,'yellow',lowLabel,'关注');
+  renderSection('risk-warehouse-high',w.high,'red',highLabel,'高风险');
+  renderSection('risk-warehouse-mid',w.mid,'orange',midLabel,'中风险');
+  renderSection('risk-warehouse-low',w.low,'yellow',lowLabel,'关注');
 }
 
-function updateRisks() {
-  function riskItem(r, cls, valHtml) {
-    const name = getVal(r, 4);
-    const site = getVal(r, 2);
-    const org  = getVal(r, 3);
-    const trainer = getVal(r, 5);
-    const date = fmtDate(getVal(r, 0));
-    return '<div class="risk-item ' + cls + '">' +
-      '<span class="risk-name">' + name + '</span>' +
-      '<span class="risk-info">' + site + ' | ' + org + ' | 培训师：' + trainer + ' | ' + date + '</span>' +
-      '<span class="risk-val">' + valHtml + '</span>' +
-      '</div>';
-  }
-
-  // 按站点类型分组
-  const centerData    = filteredData.filter(r => String(getVal(r, 2)).includes('智能验机中心'));
-  const warehouseData = filteredData.filter(r => !String(getVal(r, 2)).includes('智能验机中心'));
-
-  function getRisks(data) {
-    const high = data.filter(r =>
-      String(getVal(r, 9)).includes('不过关') &&
-      String(getVal(r, 12)).includes('不过关')
-    );
-    const mid = data.filter(r =>
-      String(getVal(r, 9)).includes('不过关') &&
-      String(getVal(r, 12)).includes('监控')
-    );
-    const low = data.filter(r => {
-      const trigger = parseFloat(getVal(r, 13));
-      const after   = parseFloat(getVal(r, 16));
-      if (isNaN(trigger) || isNaN(after)) return false;
-      const t = Math.abs(trigger) > 1 ? trigger / 100 : trigger;
-      const a = Math.abs(after)   > 1 ? after   / 100 : after;
-      return a > t;
-    });
-    return { high, mid, low };
-  }
-
-  function renderRiskSection(elId, list, cls, labelFn, level) {
-    const el = document.getElementById(elId);
-    el.innerHTML = buildSummary(list, level) +
-      list.map(r => riskItem(r, cls, labelFn(r))).join('');
-  }
-
-  const center    = getRisks(centerData);
-  const warehouse = getRisks(warehouseData);
-
-  renderRiskSection('risk-center-high', center.high, 'red',
-    r => '状态1：' + String(getVal(r, 9)).trim() + ' | 状态2：' + String(getVal(r, 12)).trim() + ' <span style="background:#ff4d4f;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;margin-left:6px;">建议绩效打C</span>', '高风险');
-  renderRiskSection('risk-center-mid', center.mid, 'orange',
-    r => '状态1：' + String(getVal(r, 9)).trim() + ' | 状态2：' + String(getVal(r, 12)).trim(), '中风险');
-  renderRiskSection('risk-center-low', center.low, 'yellow', r => {
-    const trigger = parseFloat(getVal(r, 13));
-    const after   = parseFloat(getVal(r, 16));
-    const t = Math.abs(trigger) > 1 ? trigger : trigger * 100;
-    const a = Math.abs(after)   > 1 ? after   : after   * 100;
-    return '触发：' + t.toFixed(2) + '% → 训后：' + a.toFixed(2) + '%';
-  }, '关注');
-
-  renderRiskSection('risk-warehouse-high', warehouse.high, 'red',
-    r => '状态1：' + String(getVal(r, 9)).trim() + ' | 状态2：' + String(getVal(r, 12)).trim() + ' <span style="background:#ff4d4f;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;margin-left:6px;">建议绩效打C</span>', '高风险');
-  renderRiskSection('risk-warehouse-mid', warehouse.mid, 'orange',
-    r => '状态1：' + String(getVal(r, 9)).trim() + ' | 状态2：' + String(getVal(r, 12)).trim(), '中风险');
-  renderRiskSection('risk-warehouse-low', warehouse.low, 'yellow', r => {
-    const trigger = parseFloat(getVal(r, 13));
-    const after   = parseFloat(getVal(r, 16));
-    const t = Math.abs(trigger) > 1 ? trigger : trigger * 100;
-    const a = Math.abs(after)   > 1 ? after   : after   * 100;
-    return '触发：' + t.toFixed(2) + '% → 训后：' + a.toFixed(2) + '%';
-  }, '关注');
+function statusTag(v){
+  const s=String(v).trim();if(!s)return'';
+  let cls='tag-gray';
+  if(s==='达标'||s==='回归日常监控')cls='tag-green';
+  else if(s==='不过关'||s==='不达标')cls='tag-red';
+  else if(s.includes('监控'))cls='tag-orange';
+  else if(s.includes('休假'))cls='tag-purple';
+  return '<span class="tag '+cls+'">'+s+'</span>';
 }
 
-// ---- Status Tag ----
-function statusTag(v) {
-  const s = String(v).trim();
-  if (!s) return '';
-  let cls = 'tag-gray';
-  if (s === '达标' || s === '回归日常监控') cls = 'tag-green';
-  else if (s === '不过关' || s === '不达标') cls = 'tag-red';
-  else if (s.includes('监控')) cls = 'tag-orange';
-  else if (s.includes('休假')) cls = 'tag-purple';
-  return `<span class="tag ${cls}">${s}</span>`;
+function renderTable(data){
+  const tbody=document.getElementById('table-body');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="19" class="empty-tip">暂无数据</td></tr>';return;}
+  tbody.innerHTML=data.map(r=>'<tr><td>'+fmtDate(getVal(r,0))+'</td><td>'+getVal(r,1)+'</td><td>'+getVal(r,2)+'</td><td>'+getVal(r,3)+'</td><td>'+getVal(r,4)+'</td><td>'+getVal(r,5)+'</td><td>'+fmtPct(getVal(r,13))+'</td><td>'+getVal(r,7)+'</td><td>'+statusTag(getVal(r,8))+'</td><td>'+statusTag(getVal(r,9))+'</td><td>'+getVal(r,14)+'</td><td>'+getVal(r,15)+'</td><td>'+fmtPct(getVal(r,16))+'</td><td>'+getVal(r,10)+'</td><td>'+statusTag(getVal(r,11))+'</td><td>'+statusTag(getVal(r,12))+'</td><td>'+getVal(r,77)+'</td><td>'+getVal(r,78)+'</td><td>'+fmtPct(getVal(r,79))+'</td></tr>').join('');
 }
 
-// ---- Table ----
-function updateTable() {
-  const tbody = document.getElementById('table-body');
-  if (!filteredData.length) {
-    tbody.innerHTML = '<tr><td colspan="19" class="empty-tip">暂无数据</td></tr>';
-    return;
-  }
-  tbody.innerHTML = filteredData.map(r => `
-    <tr>
-      <td>${fmtDate(getVal(r, 0))}</td>
-      <td>${getVal(r, 1)}</td>
-      <td>${getVal(r, 2)}</td>
-      <td>${getVal(r, 3)}</td>
-      <td>${getVal(r, 4)}</td>
-      <td>${getVal(r, 5)}</td>
-      <td>${fmtPct(getVal(r, 13))}</td>
-      <td>${getVal(r, 7)}</td>
-      <td>${statusTag(getVal(r, 8))}</td>
-      <td>${statusTag(getVal(r, 9))}</td>
-      <td>${getVal(r, 14)}</td>
-      <td>${getVal(r, 15)}</td>
-      <td>${fmtPct(getVal(r, 16))}</td>
-      <td>${getVal(r, 10)}</td>
-      <td>${statusTag(getVal(r, 11))}</td>
-      <td>${statusTag(getVal(r, 12))}</td>
-      <td>${getVal(r, 77)}</td>
-      <td>${getVal(r, 78)}</td>
-      <td>${fmtPct(getVal(r, 79))}</td>
-    </tr>
-  `).join('');
+function updateTable(){renderTable(filteredData);}
+
+function exportExcel(){
+  if(!filteredData.length){alert('暂无数据可导出');return;}
+  const headers=['触发日期','品类','站点','组织名称','姓名','培训师','触发差异率','任务一达训后数量','任务一是否达标','任务状态1','任务一训后差异量','任务一训后抽检量','任务一训后差异率','任务二达训后数量','任务二是否达标','任务状态2','任务二训后差异量','任务二训后抽检量','任务二训后差异率'];
+  const cols=[0,1,2,3,4,5,13,7,8,9,14,15,16,10,11,12,77,78,79];
+  const rows=filteredData.map(r=>cols.map(i=>getVal(r,i)));
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'尾部训数据');
+  XLSX.writeFile(wb,'尾部训数据_'+new Date().toLocaleDateString('zh-CN').split('/').join('-')+'.xlsx');
 }
 
-function openHelpModal() {
-  document.getElementById('help-modal').style.display = 'flex';
-}
-function closeHelpModal() {
-  document.getElementById('help-modal').style.display = 'none';
-}
+const REPO='training-board',DATA_PATH='data/huilu-data.json';
+function getGHConfig(){return{token:localStorage.getItem('gh_token')||'',user:localStorage.getItem('gh_user')||'sbl624'};}
+function openTokenModal(){const cfg=getGHConfig();document.getElementById('token-input').value=cfg.token;document.getElementById('ghuser-input').value=cfg.user;document.getElementById('token-modal').style.display='flex';}
+function closeTokenModal(){document.getElementById('token-modal').style.display='none';}
+function saveToken(){const token=document.getElementById('token-input').value.trim(),user=document.getElementById('ghuser-input').value.trim();if(!token||!user){alert('请填写 Token 和用户名');return;}localStorage.setItem('gh_token',token);localStorage.setItem('gh_user',user);closeTokenModal();document.getElementById('publish-btn').style.display='inline-block';alert('配置已保存');}
 
-// ---- GitHub Integration ----
-const REPO = 'training-board';
-const DATA_PATH = 'data/huilu-data.json';
-
-function getGHConfig() {
-  return {
-    token: localStorage.getItem('gh_token') || '',
-    user:  localStorage.getItem('gh_user')  || 'sbl624'
-  };
+async function loadFromCloud(silent){
+  const cfg=getGHConfig();
+  const url='https://raw.githubusercontent.com/'+cfg.user+'/'+REPO+'/main/'+DATA_PATH+'?t='+Date.now();
+  try{const res=await fetch(url);if(!res.ok){if(!silent)alert('云端暂无数据，请先由管理员上传 Excel 并发布');return;}const json=await res.json();allData=json.data||[];document.getElementById('file-name').textContent='云端数据（'+(json.updatedAt||'')+'）';populateSSOptions();applyFilters();if(!silent)alert('云端数据加载成功');}
+  catch(e){if(!silent)alert('加载失败：'+e.message);}
 }
 
-function openTokenModal() {
-  const cfg = getGHConfig();
-  document.getElementById('token-input').value  = cfg.token;
-  document.getElementById('ghuser-input').value = cfg.user;
-  const m = document.getElementById('token-modal');
-  m.style.display = 'flex';
+async function publishData(){
+  if(!allData.length){alert('请先上传 Excel 文件');return;}
+  const cfg=getGHConfig();if(!cfg.token){openTokenModal();return;}
+  const payload=JSON.stringify({updatedAt:new Date().toLocaleString('zh-CN'),data:allData});
+  const encoded=btoa(unescape(encodeURIComponent(payload)));
+  const apiBase='https://api.github.com/repos/'+cfg.user+'/'+REPO+'/contents/'+DATA_PATH;
+  let sha='';
+  try{const check=await fetch(apiBase,{headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json'}});if(check.ok){const info=await check.json();sha=info.sha||'';}}catch(e){}
+  const body={message:'update huilu data',content:encoded};if(sha)body.sha=sha;
+  try{const res=await fetch(apiBase,{method:'PUT',headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});if(res.ok)alert('数据发布成功！其他人刷新页面即可看到最新数据。');else{const err=await res.json();alert('发布失败：'+(err.message||res.status));}}
+  catch(e){alert('发布失败：'+e.message);}
 }
 
-function closeTokenModal() {
-  document.getElementById('token-modal').style.display = 'none';
-}
-
-function saveToken() {
-  const token = document.getElementById('token-input').value.trim();
-  const user  = document.getElementById('ghuser-input').value.trim();
-  if (!token || !user) { alert('请填写 Token 和用户名'); return; }
-  localStorage.setItem('gh_token', token);
-  localStorage.setItem('gh_user',  user);
-  closeTokenModal();
-  document.getElementById('publish-btn').style.display = 'inline-block';
-  alert('配置已保存');
-}
-
-// 页面加载时检查是否有token，有则显示发布按钮
-window.addEventListener('load', function() {
-  if (getGHConfig().token) {
-    document.getElementById('publish-btn').style.display = 'inline-block';
-  }
-  // 自动尝试从云端加载
+window.addEventListener('load',function(){
+  initAllSS();
+  if(getGHConfig().token)document.getElementById('publish-btn').style.display='inline-block';
   loadFromCloud(true);
 });
-
-async function loadFromCloud(silent) {
-  const cfg = getGHConfig();
-  const url = 'https://raw.githubusercontent.com/' + cfg.user + '/' + REPO + '/main/' + DATA_PATH + '?t=' + Date.now();
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      if (!silent) alert('云端暂无数据，请先由管理员上传 Excel 并发布');
-      return;
-    }
-    const json = await res.json();
-    allData = json.data || [];
-    document.getElementById('file-name').textContent = '云端数据（' + (json.updatedAt || '') + '）';
-    populateFilters();
-    applyFilters();
-    if (!silent) alert('云端数据加载成功');
-  } catch(e) {
-    if (!silent) alert('加载失败：' + e.message);
-  }
-}
-
-async function publishData() {
-  if (!allData.length) { alert('请先上传 Excel 文件'); return; }
-  const cfg = getGHConfig();
-  if (!cfg.token) { openTokenModal(); return; }
-
-  const payload = JSON.stringify({
-    updatedAt: new Date().toLocaleString('zh-CN'),
-    data: allData
-  });
-  const encoded = btoa(unescape(encodeURIComponent(payload)));
-
-  // 先获取文件的 SHA（更新文件需要）
-  const apiBase = 'https://api.github.com/repos/' + cfg.user + '/' + REPO + '/contents/' + DATA_PATH;
-  let sha = '';
-  try {
-    const check = await fetch(apiBase, {
-      headers: { 'Authorization': 'token ' + cfg.token, 'Accept': 'application/vnd.github.v3+json' }
-    });
-    if (check.ok) {
-      const info = await check.json();
-      sha = info.sha || '';
-    }
-  } catch(e) {}
-
-  const body = { message: 'update huilu data', content: encoded };
-  if (sha) body.sha = sha;
-
-  try {
-    const res = await fetch(apiBase, {
-      method: 'PUT',
-      headers: {
-        'Authorization': 'token ' + cfg.token,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-    if (res.ok) {
-      alert('数据发布成功！其他人刷新页面即可看到最新数据。');
-    } else {
-      const err = await res.json();
-      alert('发布失败：' + (err.message || res.status));
-    }
-  } catch(e) {
-    alert('发布失败：' + e.message);
-  }
-}
 </script>
 </body>
 </html>
